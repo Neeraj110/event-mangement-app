@@ -1,14 +1,13 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { Request, Response } from "express";
 import Event from "../models/event.model";
 import Ticket from "../models/ticket.model";
+import { IUserDocument } from "../types/types";
 
-export const getOrganizerEvents = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getOrganizerEvents = async (req: Request, res: Response) => {
   try {
-    const events = await Event.find({ organizerId: req.user?._id }).sort({
+    const events = await Event.find({
+      organizerId: (req.user as IUserDocument)?._id,
+    }).sort({
       createdAt: -1,
     });
     res.status(200).json({ events });
@@ -17,13 +16,13 @@ export const getOrganizerEvents = async (
   }
 };
 
-export const getEventStats = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getEventStats = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const event = await Event.findOne({ _id: id, organizerId: req.user?._id });
+    const event = await Event.findOne({
+      _id: id,
+      organizerId: (req.user as IUserDocument)?._id,
+    });
 
     if (!event) {
       return res

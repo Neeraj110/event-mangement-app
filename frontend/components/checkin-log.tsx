@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
-import { CheckInRecord } from '@/lib/slices/checkInSlice';
+import { CheckInRecord } from '@/lib/stores/checkInStore';
 
 interface CheckInLogProps {
   logs: CheckInRecord[];

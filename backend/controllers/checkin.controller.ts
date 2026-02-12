@@ -1,15 +1,15 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { Request, Response } from "express";
 import Ticket from "../models/ticket.model";
 import CheckIn from "../models/checkIn.model";
 import Event from "../models/event.model";
 import mongoose from "mongoose";
+import { IUserDocument } from "../types/types";
 // import { redisClient } from "../config/redis"; // Assuming redis config exists or will be created
 // import { io } from "../index"; // Socket io instance
 
-export const checkInUser = async (req: AuthenticatedRequest, res: Response) => {
+export const checkInUser = async (req: Request, res: Response) => {
   const { ticketCode, eventId, location } = req.body;
-  const organizerId = req.user?._id;
+  const organizerId = (req.user as IUserDocument)?._id;
 
   try {
     // 1. Validate Event Ownership (Only organizer or authorized staff can check in)

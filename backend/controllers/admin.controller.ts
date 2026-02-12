@@ -1,10 +1,9 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { Request, Response } from "express";
 import User from "../models/user.model";
 import Event from "../models/event.model";
 import PaymentTransaction from "../models/paymentTransaction.model";
 
-export const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
+export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await User.find().select("-password");
     res.status(200).json({ users });
@@ -13,10 +12,7 @@ export const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const getAllEvents = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getAllEvents = async (req: Request, res: Response) => {
   try {
     const events = await Event.find().populate("organizerId", "name email");
     res.status(200).json({ events });
@@ -25,10 +21,7 @@ export const getAllEvents = async (
   }
 };
 
-export const deleteEventByAdmin = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const deleteEventByAdmin = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const event = await Event.findByIdAndDelete(id);
@@ -42,10 +35,7 @@ export const deleteEventByAdmin = async (
   }
 };
 
-export const getAllPayments = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getAllPayments = async (req: Request, res: Response) => {
   try {
     const payments = await PaymentTransaction.find().populate("userId eventId");
     res.status(200).json({ payments });
@@ -54,10 +44,7 @@ export const getAllPayments = async (
   }
 };
 
-export const approvePayout = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const approvePayout = async (req: Request, res: Response) => {
   const { organizerId, amount } = req.body;
   try {
     // Logic to transfer funds via Stripe Connect or record payout

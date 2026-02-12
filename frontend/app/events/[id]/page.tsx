@@ -6,18 +6,43 @@ import { MapPin, Clock, Users, Share2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { EventCard } from '@/components/event-card';
-import { useAppSelector, useAppDispatch } from '@/lib/hooks';
-import { selectEvent } from '@/lib/slices/eventsSlice';
-import dynamic from 'next/dynamic';
+import { useEventsStore } from '@/lib/stores/eventsStore';
+import { useEvents } from '@/lib/hooks/useEventQueries';
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
-  const dispatch = useAppDispatch();
-  const event = useAppSelector((state) => state.events.selectedEvent);
-  const allEvents = useAppSelector((state) => state.events.allEvents);
+  const { selectedEvent: event, selectEvent, allEvents, setAllEvents } = useEventsStore();
+  const { data: eventsData } = useEvents();
+
+  // Sync fetched events into store
+  useEffect(() => {
+    if (eventsData && Array.isArray(eventsData)) {
+      const mapped = eventsData.map((ev: any) => ({
+        id: ev._id,
+        title: ev.title,
+        description: ev.description || '',
+        date: new Date(ev.startDate).toLocaleDateString(),
+        time: new Date(ev.startDate).toLocaleTimeString(),
+        endTime: ev.endDate ? new Date(ev.endDate).toLocaleTimeString() : '',
+        location: ev.location?.city || 'TBD',
+        city: ev.location?.city || '',
+        state: '',
+        category: ev.category || 'General',
+        price: ev.price || 0,
+        image: ev.coverImage || '/placeholder.svg',
+        organizer: { name: 'Organizer', followers: 0 },
+        status: 'upcoming' as const,
+        capacity: ev.capacity,
+        attendees: 0,
+      }));
+      setAllEvents(mapped);
+    }
+  }, [eventsData, setAllEvents]);
 
   useEffect(() => {
-    dispatch(selectEvent(params.id));
-  }, [params.id, dispatch]);
+    if (allEvents.length > 0) {
+      selectEvent(params.id);
+    }
+  }, [params.id, allEvents, selectEvent]);
 
   if (!event) {
     return (
@@ -75,12 +100,12 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                 <MapPin className="w-5 h-5 mb-2 text-blue-600" />
                 <p className="text-sm text-foreground/60">Location</p>
                 <p className="font-semibold">{event.location}</p>
-                <p className="text-sm">{event.city}, {event.state}</p>
+                <p className="text-sm">{event.city}{event.state ? `, ${event.state}` : ''}</p>
               </div>
               <div>
                 <Users className="w-5 h-5 mb-2 text-blue-600" />
                 <p className="text-sm text-foreground/60">Attendees</p>
-                <p className="font-semibold">{event.attendees}/{event.capacity}</p>
+                <p className="font-semibold">{event.attendees || 0}/{event.capacity}</p>
                 <p className="text-sm">Going</p>
               </div>
             </div>
@@ -102,27 +127,6 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                 </>
               )}
             </div>
-
-            {/* Location Section */}
-            {event.coordinates && (
-              <div>
-                <h2 className="text-2xl font-bold mb-4">Location</h2>
-                <div className="border border-border rounded-lg overflow-hidden h-80 bg-muted">
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100">
-                    <div className="text-center">
-                      <MapPin className="w-12 h-12 mx-auto mb-2 text-blue-600" />
-                      <p className="text-foreground/60">
-                        {event.location}<br />{event.city}, {event.state}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 p-4 bg-muted rounded-lg">
-                  <h3 className="font-semibold mb-2">{event.location}</h3>
-                  <p className="text-sm text-foreground/60">{event.city}, {event.state}</p>
-                </div>
-              </div>
-            )}
 
             {/* Organizer Section */}
             <div>
@@ -191,7 +195,11 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   <span className="text-green-600 font-medium">Available</span>
                 </div>
                 <p className="text-xs text-foreground/60">
-                  {event.ticketsAvailable || event.capacity ? `${(event.ticketsAvailable || event.capacity - (event.attendees || 0))} tickets left` : 'Limited spots available'}
+                  {event.ticketsAvailable !== undefined
+                    ? `${event.ticketsAvailable} tickets left`
+                    : event.capacity !== undefined
+                      ? `${event.capacity - (event.attendees || 0)} tickets left`
+                      : 'Limited spots available'}
                 </p>
               </div>
 

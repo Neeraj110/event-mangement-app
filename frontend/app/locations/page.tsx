@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { MapPin, Users, TrendingUp, Loader2 } from 'lucide-react';
-import { useGetEventsQuery } from '@/lib/api/apiSlice';
+import { useEvents } from '@/lib/hooks/useEventQueries';
 import { useMemo } from 'react';
 
 // Define Interface for Event based on backend model
@@ -22,7 +22,7 @@ interface Event {
 }
 
 export default function LocationsPage() {
-  const { data: events, isLoading, error } = useGetEventsQuery({});
+  const { data: events, isLoading, error } = useEvents();
 
   const locations = useMemo(() => {
     if (!events) return [];

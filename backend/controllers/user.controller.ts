@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model";
-import { AuthenticatedRequest } from "../types/types";
+import { IUserDocument } from "../types/types";
 import { createUserSchema, loginUserSchema } from "../schemas/user.schema";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary";
 
@@ -44,7 +44,28 @@ export const register = async (req: Request, res: Response) => {
     });
     await user.save();
 
-    res.status(201).json({ message: "User registered successfully" });
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.status(201).json({
+      message: "User registered successfully",
+      accessToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -97,8 +118,15 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export const logout = async (req: AuthenticatedRequest, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
   try {
+    const user = req.user as IUserDocument | undefined;
+    if (user) {
+      await User.findOneAndUpdate(
+        { _id: user._id },
+        { $unset: { refreshToken: 1 } },
+      );
+    }
     const refreshToken = req.cookies.refreshToken;
     if (refreshToken) {
       await User.findOneAndUpdate({ refreshToken }, { refreshToken: null });
@@ -138,9 +166,10 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
   }
 };
 
-export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
+export const getProfile = async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user?._id);
+    const currentUser = req.user as IUserDocument | undefined;
+    const user = await User.findById(currentUser?._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -161,12 +190,10 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const updateProfile = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user?._id);
+    const currentUser = req.user as IUserDocument | undefined;
+    const user = await User.findById(currentUser?._id);
     const { name, email, role, isPremium, interests, location } = req.body;
     const profileImage = req.file;
     if (!user) {
@@ -209,5 +236,32 @@ export const updateProfile = async (
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const socialAuthCallback = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as IUserDocument | undefined;
+    if (!user) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login?error=auth_failed`,
+      );
+    }
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}?accessToken=${accessToken}`);
+  } catch (error) {
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
   }
 };

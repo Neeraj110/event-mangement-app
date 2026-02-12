@@ -7,7 +7,7 @@ import morgan from "morgan";
 import connectDB from "./config/db";
 import userRoutes from "./routes/user.route";
 import eventRoutes from "./routes/event.route";
-
+import passport from "./config/passport";
 import ticketRoutes from "./routes/ticket.route";
 import organizerRoutes from "./routes/organizer.route";
 import subscriptionRoutes from "./routes/subscription.route";
@@ -20,14 +20,25 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 // Note: Webhook needs raw body, so we might need to adjust middleware order or configuration if mounting under /api/payments
 // Ideally, webhook shouldn't be under /api if we have global JSON parser.
 // But for simplicity in this task, I'll register it. If webhook fails due to parsing, we might need a separate route in index.ts
+app.use(passport.initialize());
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      process.env.CORS_ORIGIN || "http://localhost:3000",
+      process.env.FRONTEND_URL || "",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  }),
+);
 
 // Custom JSON parser to ignore webhook route
 app.use((req, res, next) => {

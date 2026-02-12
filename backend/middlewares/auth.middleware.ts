@@ -1,10 +1,10 @@
 import jwt from "jsonwebtoken";
-import { Response, NextFunction } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { Request, Response, NextFunction } from "express";
 import User from "../models/user.model";
+import { IUserDocument } from "../types/types";
 
 export const authMiddleware = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -36,10 +36,11 @@ export const authMiddleware = async (
 };
 
 export const authorizeRoles = (...roles: string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as IUserDocument | undefined;
+    if (!user || !roles.includes(user.role)) {
       return res.status(403).json({
-        message: `Forbidden: Role '${req.user?.role}' is not authorized to access this resource`,
+        message: `Forbidden: Role '${user?.role}' is not authorized to access this resource`,
       });
     }
     next();

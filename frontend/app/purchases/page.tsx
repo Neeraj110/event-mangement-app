@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { Download, Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { useAppSelector } from '@/lib/hooks';
+import { usePurchasesStore } from '@/lib/stores/purchasesStore';
 
 export default function PurchasesPage() {
-  const purchases = useAppSelector((state) => state.purchases);
+  const purchases = usePurchasesStore();
   const [activeTab, setActiveTab] = useState<'all' | 'invoices' | 'refunds' | 'subscriptions'>('all');
 
   const getStatusColor = (status: string) => {
@@ -76,11 +76,10 @@ export default function PurchasesPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as typeof activeTab)}
-                className={`py-4 px-1 border-b-2 font-medium transition capitalize ${
-                  activeTab === tab
+                className={`py-4 px-1 border-b-2 font-medium transition capitalize ${activeTab === tab
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-foreground/60 hover:text-foreground'
-                }`}
+                  }`}
               >
                 {tab}
               </button>

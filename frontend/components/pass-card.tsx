@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import { QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Pass } from '@/lib/slices/passesSlice';
+import { Pass } from '@/lib/stores/passesStore';
 
-interface PassCardProps extends Pass {}
+interface PassCardProps extends Pass { }
 
 export function PassCard(pass: PassCardProps) {
   return (

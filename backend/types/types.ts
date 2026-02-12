@@ -14,7 +14,9 @@ export interface IUser {
   name: string;
   profileImage?: string;
   email: string;
-  password: string;
+  password?: string;
+  googleId?: string;
+  githubId?: string;
   role: UserRole;
   isPremium: boolean;
   bookmarks: Types.ObjectId[];

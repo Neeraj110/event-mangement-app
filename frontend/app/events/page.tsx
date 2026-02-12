@@ -1,29 +1,55 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Grid2x2, List, Sliders } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { EventCard } from '@/components/event-card';
 import { EventFilters } from '@/components/event-filters';
-import { useAppSelector, useAppDispatch } from '@/lib/hooks';
-import { filterEvents } from '@/lib/slices/eventsSlice';
+import { useEventsStore } from '@/lib/stores/eventsStore';
+import { useEvents } from '@/lib/hooks/useEventQueries';
 import { useSearchParams } from 'next/navigation';
 import Loading from './loading';
 
 export default function EventsPage() {
-  const dispatch = useAppDispatch();
-  const events = useAppSelector((state) => state.events.filteredEvents);
+  const { filteredEvents, filterEvents, setAllEvents } = useEventsStore();
+  const { data: eventsData, isLoading } = useEvents();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recommended');
   const [showFilters, setShowFilters] = useState(true);
   const searchParams = useSearchParams();
 
+  // Sync fetched events into the Zustand store for local filtering
+  useEffect(() => {
+    if (eventsData && Array.isArray(eventsData)) {
+      const mapped = eventsData.map((event: any) => ({
+        id: event._id,
+        title: event.title,
+        description: event.description || '',
+        date: new Date(event.startDate).toLocaleDateString(),
+        time: new Date(event.startDate).toLocaleTimeString(),
+        endTime: event.endDate ? new Date(event.endDate).toLocaleTimeString() : '',
+        location: event.location?.city || 'TBD',
+        city: event.location?.city || '',
+        state: '',
+        category: event.category || 'General',
+        price: event.price || 0,
+        image: event.coverImage || '/placeholder.svg',
+        organizer: { name: 'Organizer', followers: 0 },
+        status: 'upcoming' as const,
+        capacity: event.capacity,
+      }));
+      setAllEvents(mapped);
+    }
+  }, [eventsData, setAllEvents]);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    dispatch(filterEvents({ searchQuery: query }));
+    filterEvents({ searchQuery: query });
   };
+
+  if (isLoading) return <Loading />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,22 +111,20 @@ export default function EventsPage() {
               <div className="hidden md:flex items-center border border-border rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded transition ${
-                    viewMode === 'grid'
+                  className={`p-2 rounded transition ${viewMode === 'grid'
                       ? 'bg-blue-100 text-blue-600'
                       : 'text-foreground/60 hover:text-foreground'
-                  }`}
+                    }`}
                   title="Grid view"
                 >
                   <Grid2x2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded transition ${
-                    viewMode === 'list'
+                  className={`p-2 rounded transition ${viewMode === 'list'
                       ? 'bg-blue-100 text-blue-600'
                       : 'text-foreground/60 hover:text-foreground'
-                  }`}
+                    }`}
                   title="List view"
                 >
                   <List className="w-4 h-4" />
@@ -130,11 +154,11 @@ export default function EventsPage() {
               </p>
             </div>
 
-            {events.length > 0 ? (
+            {filteredEvents.length > 0 ? (
               <>
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {events.map((event) => (
+                    {filteredEvents.map((event) => (
                       <EventCard
                         key={event.id}
                         id={event.id}
@@ -149,7 +173,7 @@ export default function EventsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {events.map((event) => (
+                    {filteredEvents.map((event) => (
                       <div key={event.id} className="flex gap-4 p-4 border border-border rounded-lg hover:shadow-md transition">
                         <div className="w-48 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                           <img src={event.image || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />

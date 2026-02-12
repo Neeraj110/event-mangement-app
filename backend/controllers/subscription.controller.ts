@@ -1,5 +1,6 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { Request, Response } from "express";
+import Subscription from "../models/subscription.model";
+import { IUserDocument } from "../types/types";
 import User from "../models/user.model";
 import Stripe from "stripe";
 
@@ -7,12 +8,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2026-01-28.clover",
 });
 
-export const createSubscription = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const createSubscription = async (req: Request, res: Response) => {
   const { priceId } = req.body; // Stripe Price ID from frontend
-  const userId = req.user?._id;
+  const userId = (req.user as IUserDocument)?._id;
 
   try {
     const user = await User.findById(userId);
@@ -55,12 +53,10 @@ export const createSubscription = async (
   }
 };
 
-export const getSubscriptionStatus = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getSubscriptionStatus = async (req: Request, res: Response) => {
   try {
-    const user = await User.findById(req.user?._id);
+    const currentUser = req.user as IUserDocument | undefined;
+    const user = await User.findById(currentUser?._id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // In a real app, you might sync this status via webhooks to your DB

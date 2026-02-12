@@ -6,10 +6,10 @@ import { ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { PassCard } from '@/components/pass-card';
-import { useAppSelector } from '@/lib/hooks';
+import { usePassesStore } from '@/lib/stores/passesStore';
 
 export default function MyPassesPage() {
-  const passes = useAppSelector((state) => state.passes);
+  const passes = usePassesStore();
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'expired'>('active');
 
   const currentPasses =
@@ -50,11 +50,10 @@ export default function MyPassesPage() {
           <div className="flex gap-8">
             <button
               onClick={() => setActiveTab('active')}
-              className={`py-4 px-1 border-b-2 font-medium transition ${
-                activeTab === 'active'
+              className={`py-4 px-1 border-b-2 font-medium transition ${activeTab === 'active'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-foreground/60 hover:text-foreground'
-              }`}
+                }`}
             >
               Active{' '}
               <span className={`ml-2 ${activeTab === 'active' ? 'bg-blue-600 text-white' : 'bg-muted'} px-2 py-1 rounded text-xs`}>
@@ -63,11 +62,10 @@ export default function MyPassesPage() {
             </button>
             <button
               onClick={() => setActiveTab('upcoming')}
-              className={`py-4 px-1 border-b-2 font-medium transition ${
-                activeTab === 'upcoming'
+              className={`py-4 px-1 border-b-2 font-medium transition ${activeTab === 'upcoming'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-foreground/60 hover:text-foreground'
-              }`}
+                }`}
             >
               Upcoming{' '}
               <span className={`ml-2 ${activeTab === 'upcoming' ? 'bg-blue-600 text-white' : 'bg-muted'} px-2 py-1 rounded text-xs`}>
@@ -76,11 +74,10 @@ export default function MyPassesPage() {
             </button>
             <button
               onClick={() => setActiveTab('expired')}
-              className={`py-4 px-1 border-b-2 font-medium transition ${
-                activeTab === 'expired'
+              className={`py-4 px-1 border-b-2 font-medium transition ${activeTab === 'expired'
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-foreground/60 hover:text-foreground'
-              }`}
+                }`}
             >
               Expired{' '}
               <span className={`ml-2 ${activeTab === 'expired' ? 'bg-blue-600 text-white' : 'bg-muted'} px-2 py-1 rounded text-xs`}>

@@ -2,14 +2,14 @@
 
 import React from "react"
 
-import { Provider } from 'react-redux';
-import { store } from '@/lib/store';
-import { ThemeProvider } from '@/lib/theme-context';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
+import { ThemeProvider } from '@/components/theme-provider';
 
-export function ReduxProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <Provider store={store}>{children}</Provider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </ThemeProvider>
   );
 }

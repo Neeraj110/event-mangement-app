@@ -1,11 +1,17 @@
 'use client';
 
 import React from "react"
-
 import Link from 'next/link';
 import { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Music, Code, Palette, Users, Utensils, Zap } from 'lucide-react';
+import { Mail, Lock, Music, Code, Palette, Users, Utensils, Zap, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signupSchema, type SignupFormValues } from '@/lib/validations/auth';
+import { useRegister } from '@/lib/hooks/useAuthQueries';
+import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 
 const CATEGORIES = [
   { id: 'music', label: 'Music', icon: Music },
@@ -17,58 +23,58 @@ const CATEGORIES = [
 ];
 
 export default function SignUpPage() {
-  const [userType, setUserType] = useState<'user' | 'organizer'>('user');
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [serverError, setServerError] = useState('');
+  const registerMutation = useRegister();
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      userType: 'user',
+      interests: [],
+    },
+    mode: 'onBlur',
+  });
+
+  const selectedInterests = form.watch('interests');
+  const userType = form.watch('userType');
 
   const toggleInterest = (id: string) => {
-    setSelectedInterests(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    const current = form.getValues('interests');
+    const updated = current.includes(id)
+      ? current.filter(i => i !== id)
+      : [...current, id];
+    form.setValue('interests', updated);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+  const onSubmit = async (values: SignupFormValues) => {
+    setServerError('');
 
-    if (!formData.username || !formData.email || !formData.password) {
-      setError('Please fill in all fields');
-      setIsLoading(false);
-      return;
-    }
+    try {
+      const data = new FormData();
+      data.append('name', values.username);
+      data.append('email', values.email);
+      data.append('password', values.password);
+      data.append('role', values.userType);
 
-    if (formData.password.length < 8) {
-      setError('Minimum 8 characters with at least one number.');
-      setIsLoading(false);
-      return;
-    }
-
-    setTimeout(() => {
-      console.log('Sign up attempted:', {
-        userType,
-        username: formData.username,
-        email: formData.email,
-        interests: selectedInterests,
+      values.interests.forEach(interest => {
+        data.append('interests', interest);
       });
-      setIsLoading(false);
-    }, 1000);
+
+      await registerMutation.mutateAsync(data);
+
+      toast.success('Account created successfully!');
+      router.push('/');
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      setServerError(err?.message || err?.data?.message || 'Registration failed. Please try again.');
+    }
   };
+
+  const isLoading = registerMutation.isPending;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -97,27 +103,27 @@ export default function SignUpPage() {
               </p>
             </div>
 
-            {error && (
+            {serverError && (
               <div className="mb-6 p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
-                {error}
+                {serverError}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* User Type Selection */}
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 block">
                   I AM JOINING AS A...
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {['user', 'organizer'].map(type => (
+                  {(['user', 'organizer'] as const).map(type => (
                     <button
                       key={type}
                       type="button"
-                      onClick={() => setUserType(type as 'user' | 'organizer')}
+                      onClick={() => form.setValue('userType', type)}
                       className={`px-4 py-2.5 rounded-full font-semibold transition-all ${userType === type
-                          ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                          : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border'
+                        ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                        : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border'
                         }`}
                     >
                       {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -127,80 +133,92 @@ export default function SignUpPage() {
               </div>
 
               {/* Username Field */}
-              <div>
-                <label htmlFor="username" className="block text-sm font-semibold text-foreground mb-2">
-                  Unique Name
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3 text-muted-foreground font-semibold">@</span>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    placeholder="yourname"
-                    value={formData.username}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('username')}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-8 pr-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground transition-all ${focusedField === 'username'
-                        ? 'border-primary ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50'
-                      }`}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
+              <Controller
+                name="username"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name} className="text-sm font-semibold">
+                      Unique Name
+                    </FieldLabel>
+                    <div className="relative">
+                      <span className="absolute left-4 top-3 text-muted-foreground font-semibold">@</span>
+                      <input
+                        {...field}
+                        id={field.name}
+                        type="text"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="yourname"
+                        className={`w-full pl-8 pr-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground transition-all ${fieldState.invalid
+                          ? 'border-destructive ring-2 ring-destructive/20'
+                          : 'border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                          }`}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
 
               {/* Email Field */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-3 w-5 h-5 text-muted-foreground" />
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-12 pr-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground transition-all ${focusedField === 'email'
-                        ? 'border-primary ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50'
-                      }`}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name} className="text-sm font-semibold">
+                      Email
+                    </FieldLabel>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-3 w-5 h-5 text-muted-foreground" />
+                      <input
+                        {...field}
+                        id={field.name}
+                        type="email"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="email@example.com"
+                        className={`w-full pl-12 pr-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground transition-all ${fieldState.invalid
+                          ? 'border-destructive ring-2 ring-destructive/20'
+                          : 'border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                          }`}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
 
               {/* Password Field */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-3 w-5 h-5 text-muted-foreground" />
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-12 pr-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground transition-all ${focusedField === 'password'
-                        ? 'border-primary ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50'
-                      }`}
-                    disabled={isLoading}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Minimum 8 characters with at least one number.</p>
-              </div>
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name} className="text-sm font-semibold">
+                      Password
+                    </FieldLabel>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-3 w-5 h-5 text-muted-foreground" />
+                      <input
+                        {...field}
+                        id={field.name}
+                        type="password"
+                        aria-invalid={fieldState.invalid}
+                        placeholder="••••••••"
+                        className={`w-full pl-12 pr-4 py-3 bg-background border rounded-xl text-foreground placeholder:text-muted-foreground transition-all ${fieldState.invalid
+                          ? 'border-destructive ring-2 ring-destructive/20'
+                          : 'border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20'
+                          }`}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <FieldDescription>Minimum 6 characters.</FieldDescription>
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
 
               {/* Interests Selection */}
               <div>
@@ -217,8 +235,8 @@ export default function SignUpPage() {
                         type="button"
                         onClick={() => toggleInterest(category.id)}
                         className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all flex items-center justify-center gap-2 ${isSelected
-                            ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                            : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border'
+                          ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                          : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border'
                           }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -235,7 +253,11 @@ export default function SignUpPage() {
                 className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-full transition-all duration-200 mt-8 shadow-lg hover:shadow-primary/25"
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating account...' : 'Create Account'}
+                {isLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Creating account...</>
+                ) : (
+                  'Create Account'
+                )}
               </Button>
 
               {/* Terms */}

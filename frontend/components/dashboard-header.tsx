@@ -1,65 +1,87 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Bell, LogOut } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAppSelector } from '@/lib/hooks';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { useLogout } from '@/lib/hooks/useAuthQueries';
+import { useRouter } from 'next/navigation';
 
 interface DashboardHeaderProps {
   title: string;
   subtitle?: string;
 }
 
-export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
-  const user = useAppSelector((state) => state.auth.user);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+export function DashboardHeader({ title }: DashboardHeaderProps) {
+  const user = useAuthStore((state) => state.user);
+  const clearCredentials = useAuthStore((state) => state.clearCredentials);
+  const logoutMutation = useLogout();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } catch {
+      // Even if logout API fails, clear local state
+      clearCredentials();
+    }
+    router.push('/login');
+  };
+
+  const getInitials = () => {
+    if (!user?.name) return '?';
+    const parts = user.name.split(' ');
+    if (parts.length > 1) {
+      return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+    }
+    return parts[0].charAt(0);
+  };
 
   return (
-    <header className="border-b border-border bg-background sticky top-0 z-40">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Logo & Title */}
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-xs">◆</span>
-            </div>
-            <span>Spot</span>
-          </Link>
-          <div className="hidden md:block border-l border-border pl-4">
-            <p className="text-sm text-foreground/60">{title}</p>
-          </div>
-        </div>
-
-        {/* Right Section */}
-        <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-muted rounded-lg transition">
-            <Bell className="w-5 h-5" />
-          </button>
-          <div className="relative">
-            <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white font-semibold hover:opacity-90 transition"
-            >
-              {user?.firstName.charAt(0)}
-            </button>
-            {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
-                <div className="px-4 py-2 border-b border-border">
-                  <p className="font-semibold text-sm">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-foreground/60">{user?.email}</p>
-                </div>
-                <Link href="/account">
-                  <button className="w-full text-left px-4 py-2 hover:bg-muted transition text-sm">
-                    Account Settings
-                  </button>
-                </Link>
-                <button className="w-full text-left px-4 py-2 hover:bg-muted transition text-sm flex items-center gap-2 text-red-600">
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
+    <header className="bg-card border-b border-border sticky top-0 z-50">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">S</span>
               </div>
-            )}
+              <span className="text-lg font-bold hidden sm:inline">Spot</span>
+            </Link>
+            <span className="text-foreground/40 hidden sm:inline">|</span>
+            <h1 className="text-lg font-semibold hidden sm:inline">{title}</h1>
+          </div>
+
+          {/* Right Side */}
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+
+            {/* User Menu */}
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                {getInitials()}
+              </div>
+              <div className="hidden md:block">
+                <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                <p className="text-xs text-foreground/60">{user?.role || ''}</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-foreground/40" />
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={logoutMutation.isPending}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">
+                {logoutMutation.isPending ? 'Signing Out...' : 'Sign Out'}
+              </span>
+            </Button>
           </div>
         </div>
       </div>

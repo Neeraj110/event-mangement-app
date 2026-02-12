@@ -2,7 +2,7 @@ import React from "react"
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { ReduxProvider } from '@/components/providers'
+import { AppProvider } from '@/components/providers'
 import './globals.css'
 
 const inter = Inter({
@@ -54,9 +54,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans antialiased bg-background text-foreground transition-colors duration-300`}>
-        <ReduxProvider>
+        <AppProvider>
           {children}
-        </ReduxProvider>
+        </AppProvider>
         <Analytics />
       </body>
     </html>

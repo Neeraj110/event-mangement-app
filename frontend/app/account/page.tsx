@@ -1,43 +1,81 @@
 'use client';
 
 import React from "react"
-
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { SettingsSidebar } from '@/components/settings-sidebar';
-import { useAppSelector, useAppDispatch } from '@/lib/hooks';
-import { updateUser } from '@/lib/slices/authSlice';
+import { useProfile, useUpdateProfile } from '@/lib/hooks/useAuthQueries';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { accountSchema, type AccountFormValues } from '@/lib/validations/auth';
+import { Field, FieldLabel, FieldError } from '@/components/ui/field';
 
 export default function AccountPage() {
-  const user = useAppSelector((state) => state.auth.user);
-  const dispatch = useAppDispatch();
-
-  const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    bio: user?.bio || '',
-  });
+  const { data: profileData, isLoading } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
+  const user = profileData?.user;
 
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const form = useForm<AccountFormValues>({
+    resolver: zodResolver(accountSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+    },
+    mode: 'onBlur',
+  });
+
+  // Populate form when user data loads
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+      });
+    }
+  }, [user, form]);
+
+  const onSubmit = async (values: AccountFormValues) => {
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', values.name);
+      formDataToSend.append('email', values.email);
+      await updateProfileMutation.mutateAsync(formDataToSend);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
   };
 
-  const handleSave = () => {
-    dispatch(updateUser(formData));
+  const handleCancel = () => {
+    form.reset({
+      name: user?.name || '',
+      email: user?.email || '',
+    });
     setIsEditing(false);
   };
 
-  if (!user) {
-    return null;
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader title="Account Settings" />
+        <div className="flex items-center justify-center h-96">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
   }
+
+  const getInitials = () => {
+    const parts = user.name.split(' ');
+    if (parts.length > 1) {
+      return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+    }
+    return parts[0].charAt(0);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,13 +102,13 @@ export default function AccountPage() {
               {/* Profile Header */}
               <div className="flex items-center gap-6 pb-6 border-b border-border">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white text-3xl font-bold flex-shrink-0">
-                  {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                  {getInitials()}
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold">{user.firstName} {user.lastName}</h3>
+                  <h3 className="text-xl font-semibold">{user.name}</h3>
                   <p className="text-foreground/60">{user.role}</p>
                   <p className="text-sm text-foreground/60 mt-1">
-                    Member since {user.memberSince}
+                    Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -82,99 +120,73 @@ export default function AccountPage() {
               </div>
 
               {/* Form */}
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">First Name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">Last Name</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60"
-                    />
-                  </div>
-                </div>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Name Field */}
+                <Controller
+                  name="name"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name} className="text-sm font-semibold">
+                        Full Name
+                      </FieldLabel>
+                      <input
+                        {...field}
+                        id={field.name}
+                        type="text"
+                        aria-invalid={fieldState.invalid}
+                        disabled={!isEditing}
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60 aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-red-500/20"
+                      />
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
 
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Bio</label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    rows={4}
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60 resize-none"
-                  />
-                  <p className="text-xs text-foreground/60 mt-2">
-                    Maximum 500 characters. HTML is not allowed.
-                  </p>
-                </div>
+                {/* Email Field */}
+                <Controller
+                  name="email"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name} className="text-sm font-semibold">
+                        Email Address
+                      </FieldLabel>
+                      <input
+                        {...field}
+                        id={field.name}
+                        type="email"
+                        aria-invalid={fieldState.invalid}
+                        disabled={!isEditing}
+                        className="w-full px-4 py-2 border border-border rounded-lg bg-background disabled:bg-muted/50 disabled:text-foreground/60 aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-red-500/20"
+                      />
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-border">
                   {isEditing ? (
                     <>
                       <Button
+                        type="button"
                         variant="outline"
-                        onClick={() => {
-                          setFormData({
-                            firstName: user.firstName,
-                            lastName: user.lastName,
-                            email: user.email,
-                            phone: user.phone,
-                            bio: user.bio,
-                          });
-                          setIsEditing(false);
-                        }}
+                        onClick={handleCancel}
                       >
                         Cancel
                       </Button>
                       <Button
+                        type="submit"
                         className="bg-blue-600 hover:bg-blue-700"
-                        onClick={handleSave}
+                        disabled={updateProfileMutation.isPending}
                       >
-                        Save Changes
+                        {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
                       </Button>
                     </>
                   ) : (
                     <Button
+                      type="button"
                       variant="outline"
                       onClick={() => setIsEditing(true)}
                     >
@@ -182,7 +194,7 @@ export default function AccountPage() {
                     </Button>
                   )}
                 </div>
-              </div>
+              </form>
             </div>
 
             {/* Danger Zone */}

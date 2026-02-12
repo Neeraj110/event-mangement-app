@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
 import Stripe from "stripe";
+import { IUserDocument } from "../types/types";
+import Event from "../models/event.model";
 import PaymentTransaction from "../models/paymentTransaction.model";
 import Ticket from "../models/ticket.model";
-import Event from "../models/event.model";
 import { v4 as uuidv4 } from "uuid";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -14,12 +14,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
  * Create a payment intent for ticket purchase
  * Uses idempotency key from header for safe retries
  */
-export const createPaymentIntent = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
-  const { amount, currency, eventId, quantity } = req.body;
-  const userId = req.user?._id;
+export const createPaymentIntent = async (req: Request, res: Response) => {
+  const { eventId, quantity } = req.body;
+  const userId = (req.user as IUserDocument)?._id;
 
   // Get idempotency key from header (client should generate a unique key)
   const idempotencyKey = req.headers["idempotency-key"] as string;
@@ -31,17 +28,21 @@ export const createPaymentIntent = async (
       return res.status(404).json({ message: "Event not found" });
     }
 
+    const qty = parseInt(quantity?.toString() || "1");
+    const amount = event.price * qty;
+    const currency = "usd";
+
     // Create payment intent with idempotency key for safe retries
     const paymentIntentOptions: Stripe.PaymentIntentCreateParams = {
       amount: Math.round(amount * 100), // Amount in cents (ensure integer)
-      currency: currency || "usd",
+      currency: currency,
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
         userId: userId?.toString() || "",
         eventId,
-        quantity: quantity?.toString() || "1",
+        quantity: qty.toString(),
         eventTitle: event.title,
       },
       description: `Ticket purchase for ${event.title}`,

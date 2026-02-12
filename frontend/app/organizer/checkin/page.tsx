@@ -6,13 +6,13 @@ import { Search, Camera, Trash2, Zap, Focus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { CheckInLog } from '@/components/checkin-log';
-import { useAppSelector } from '@/lib/hooks';
+import { useCheckInStore } from '@/lib/stores/checkInStore';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 export default function CheckInPage() {
   const searchParams = useSearchParams();
-  const checkIn = useAppSelector((state) => state.checkIn);
+  const checkIn = useCheckInStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isScanning, setIsScanning] = useState(false);
 

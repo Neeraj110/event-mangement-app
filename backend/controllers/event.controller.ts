@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { IUserDocument } from "../types/types";
 import { createEventSchema, updateEventSchema } from "../schemas/event.schema";
 import Event from "../models/event.model";
 import Ticket from "../models/ticket.model";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary";
 
-export const createEvent = async (req: AuthenticatedRequest, res: Response) => {
+export const createEvent = async (req: Request, res: Response) => {
   const validation = createEventSchema.safeParse({ body: req.body });
   const coverImage = req.file;
+  const organizerId = (req.user as IUserDocument)?._id;
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.format() });
   }
@@ -45,7 +46,7 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response) => {
       price,
       capacity,
       coverImage: coverImageUrl,
-      organizerId: req.user?._id,
+      organizerId: organizerId,
       isPublished: false, // Default to false
     });
 
@@ -103,10 +104,11 @@ export const getEventById = async (req: Request, res: Response) => {
   }
 };
 
-export const updateEvent = async (req: AuthenticatedRequest, res: Response) => {
+export const updateEvent = async (req: Request, res: Response) => {
   const { id } = req.params;
   const validation = updateEventSchema.safeParse({ body: req.body });
   const coverImage = req.file;
+  const currentUser = req.user as IUserDocument | undefined;
 
   if (!validation.success) {
     return res.status(400).json({ errors: validation.error.format() });
@@ -122,8 +124,9 @@ export const updateEvent = async (req: AuthenticatedRequest, res: Response) => {
     // Authorization: Check ownership
     // Authorization: Check ownership (Allow admin to bypass)
     if (
-      event.organizerId.toString() !== req.user?._id.toString() &&
-      req.user?.role === "organizer"
+      event.organizerId.toString() !==
+        (req.user as IUserDocument)?._id.toString() &&
+      (req.user as IUserDocument)?.role === "organizer"
     ) {
       return res
         .status(403)
@@ -175,8 +178,9 @@ export const updateEvent = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const deleteEvent = async (req: AuthenticatedRequest, res: Response) => {
+export const deleteEvent = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const currentUser = req.user as IUserDocument | undefined;
 
   try {
     const event = await Event.findById(id);
@@ -186,8 +190,9 @@ export const deleteEvent = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     if (
-      event.organizerId.toString() !== req.user?._id.toString() &&
-      req.user?.role === "organizer"
+      event.organizerId.toString() !==
+        (req.user as IUserDocument)?._id.toString() &&
+      (req.user as IUserDocument)?.role === "organizer"
     ) {
       return res
         .status(403)

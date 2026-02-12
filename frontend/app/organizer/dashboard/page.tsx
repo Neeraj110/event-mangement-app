@@ -4,10 +4,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { TrendingUp, Users, Ticket, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { useAppSelector } from '@/lib/hooks';
+import { useDashboardStore } from '@/lib/stores/dashboardStore';
 
 export default function OrganizerDashboard() {
-  const dashboard = useAppSelector((state) => state.dashboard);
+  const dashboard = useDashboardStore();
 
   const chartData = [
     { name: '12 AM', revenue: 1200 },
@@ -175,13 +175,12 @@ export default function OrganizerDashboard() {
                     <td className="px-4 py-4 text-sm">{event.date}</td>
                     <td className="px-4 py-4">
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                          event.status === 'live'
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${event.status === 'live'
                             ? 'bg-green-100 text-green-700'
                             : event.status === 'upcoming'
                               ? 'bg-blue-100 text-blue-700'
                               : 'bg-gray-100 text-gray-700'
-                        }`}
+                          }`}
                       >
                         {event.status.toUpperCase()}
                       </span>

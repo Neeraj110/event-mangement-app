@@ -1,13 +1,11 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/types";
+import { Request, Response } from "express";
 import Ticket from "../models/ticket.model";
+import Event from "../models/event.model";
+import { IUserDocument, AuthenticatedRequest } from "../types/types";
 
-export const getUserTickets = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getUserTickets = async (req: Request, res: Response) => {
   try {
-    const userId = req.user?._id;
+    const userId = (req.user as IUserDocument)?._id;
 
     const tickets = await Ticket.find({ userId })
       .populate({
@@ -22,15 +20,13 @@ export const getUserTickets = async (
   }
 };
 
-export const getTicketById = async (
-  req: AuthenticatedRequest,
-  res: Response,
-) => {
+export const getTicketById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
+    const user = req.user as IUserDocument | undefined;
     const ticket = await Ticket.findOne({
       _id: id,
-      userId: req.user?._id,
+      userId: user?._id,
     }).populate("eventId");
 
     if (!ticket) {

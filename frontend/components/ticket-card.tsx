@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import { Calendar, MapPin, QrCode, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Ticket as TicketType } from '@/lib/slices/ticketsSlice';
+import { Ticket as TicketType } from '@/lib/stores/ticketsStore';
 
-interface TicketCardProps extends TicketType {}
+interface TicketCardProps extends TicketType { }
 
 export function TicketCard(ticket: TicketCardProps) {
   const getStatusColor = (status: string) => {

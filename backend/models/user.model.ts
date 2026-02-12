@@ -11,7 +11,9 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
     name: { type: String, required: true, unique: true },
     profileImage: { type: String },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
+    googleId: { type: String },
+    githubId: { type: String },
     role: {
       type: String,
       enum: ["user", "admin", "organizer"],
@@ -38,15 +40,16 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
 );
 
 userSchema.pre("save", async function (this: IUserDocument) {
-  if (!this.isModified("password")) return;
-  this.password = await bcrypt.hash(this.password, 10);
+  if (!this.isModified("password") || !this.password) return;
+  this.password = await bcrypt.hash(this.password as string, 10);
 });
 
 userSchema.methods.comparePassword = async function (
   this: IUserDocument,
   password: string,
 ) {
-  return bcrypt.compare(password, this.password);
+  if (!this.password) return false;
+  return bcrypt.compare(password, this.password as string);
 };
 
 userSchema.methods.generateAccessToken = function (this: IUserDocument) {
