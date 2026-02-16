@@ -35,7 +35,7 @@ app.use(
       process.env.CORS_ORIGIN || "http://localhost:3000",
       process.env.FRONTEND_URL || "",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
     credentials: true,
   }),
 );

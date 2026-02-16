@@ -60,7 +60,7 @@ export const register = async (req: Request, res: Response) => {
       message: "User registered successfully",
       accessToken,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -106,7 +106,7 @@ export const login = async (req: Request, res: Response) => {
     res.status(200).json({
       accessToken,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -175,7 +175,7 @@ export const getProfile = async (req: Request, res: Response) => {
     }
     res.status(200).json({
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -224,7 +224,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     await user.save();
     res.status(200).json({
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,

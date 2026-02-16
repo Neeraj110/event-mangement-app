@@ -51,8 +51,8 @@ export default function MyPassesPage() {
             <button
               onClick={() => setActiveTab('active')}
               className={`py-4 px-1 border-b-2 font-medium transition ${activeTab === 'active'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-foreground/60 hover:text-foreground'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-foreground/60 hover:text-foreground'
                 }`}
             >
               Active{' '}
@@ -63,8 +63,8 @@ export default function MyPassesPage() {
             <button
               onClick={() => setActiveTab('upcoming')}
               className={`py-4 px-1 border-b-2 font-medium transition ${activeTab === 'upcoming'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-foreground/60 hover:text-foreground'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-foreground/60 hover:text-foreground'
                 }`}
             >
               Upcoming{' '}
@@ -75,8 +75,8 @@ export default function MyPassesPage() {
             <button
               onClick={() => setActiveTab('expired')}
               className={`py-4 px-1 border-b-2 font-medium transition ${activeTab === 'expired'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-foreground/60 hover:text-foreground'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-foreground/60 hover:text-foreground'
                 }`}
             >
               Expired{' '}
@@ -91,7 +91,7 @@ export default function MyPassesPage() {
         {currentPasses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentPasses.map((pass) => (
-              <PassCard key={pass.id} {...pass} />
+              <PassCard key={pass._id} {...pass} />
             ))}
           </div>
         ) : (

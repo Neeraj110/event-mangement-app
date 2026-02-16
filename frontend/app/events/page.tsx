@@ -24,7 +24,7 @@ export default function EventsPage() {
   useEffect(() => {
     if (eventsData && Array.isArray(eventsData)) {
       const mapped = eventsData.map((event: any) => ({
-        id: event._id,
+        _id: event._id,
         title: event.title,
         description: event.description || '',
         date: new Date(event.startDate).toLocaleDateString(),
@@ -112,8 +112,8 @@ export default function EventsPage() {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded transition ${viewMode === 'grid'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-foreground/60 hover:text-foreground'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-foreground/60 hover:text-foreground'
                     }`}
                   title="Grid view"
                 >
@@ -122,8 +122,8 @@ export default function EventsPage() {
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 rounded transition ${viewMode === 'list'
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-foreground/60 hover:text-foreground'
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'text-foreground/60 hover:text-foreground'
                     }`}
                   title="List view"
                 >
@@ -160,8 +160,8 @@ export default function EventsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredEvents.map((event) => (
                       <EventCard
-                        key={event.id}
-                        id={event.id}
+                        key={event._id}
+                        _id={event._id}
                         title={event.title}
                         date={event.date}
                         location={event.location}
@@ -174,7 +174,7 @@ export default function EventsPage() {
                 ) : (
                   <div className="space-y-4">
                     {filteredEvents.map((event) => (
-                      <div key={event.id} className="flex gap-4 p-4 border border-border rounded-lg hover:shadow-md transition">
+                      <div key={event._id} className="flex gap-4 p-4 border border-border rounded-lg hover:shadow-md transition">
                         <div className="w-48 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                           <img src={event.image || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />
                         </div>

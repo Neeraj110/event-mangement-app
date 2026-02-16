@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export interface Pass {
-  id: string;
+  _id: string;
   name: string;
   type: "seasonal" | "annual" | "limited";
   status: "active" | "upcoming" | "expired";
@@ -53,13 +53,13 @@ export const usePassesStore = create<PassesState & PassesActions>(
           ...state.upcomingPasses,
           ...state.expiredPasses,
         ];
-        const pass = allPasses.find((p) => p.id === passId);
+        const pass = allPasses.find((p) => p._id === passId);
         if (!pass) return state;
 
         const updated = { ...pass, status };
-        const active = state.activePasses.filter((p) => p.id !== passId);
-        const upcoming = state.upcomingPasses.filter((p) => p.id !== passId);
-        const expired = state.expiredPasses.filter((p) => p.id !== passId);
+        const active = state.activePasses.filter((p) => p._id !== passId);
+        const upcoming = state.upcomingPasses.filter((p) => p._id !== passId);
+        const expired = state.expiredPasses.filter((p) => p._id !== passId);
 
         if (status === "active")
           return {

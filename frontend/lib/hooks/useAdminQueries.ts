@@ -52,3 +52,21 @@ export function useApprovePayout() {
     },
   });
 }
+
+export function useToggleEventPublish() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient<{ message: string; event: Event }>(
+        `/admin/events/${id}/publish`,
+        {
+          method: "PATCH",
+        },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "events"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+}

@@ -86,7 +86,7 @@ function MyTicketsContent() {
                 {filteredTickets.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredTickets.map((ticket) => (
-                            <TicketCard key={ticket.id} {...ticket} />
+                            <TicketCard key={ticket._id} {...ticket} />
                         ))}
                     </div>
                 ) : (

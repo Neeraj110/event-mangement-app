@@ -42,6 +42,7 @@ export function useLogin() {
         body: JSON.stringify(credentials),
       }),
     onSuccess: (data) => {
+      console.log(data);
       useAuthStore
         .getState()
         .setCredentials(data.user as unknown as User, data.accessToken);

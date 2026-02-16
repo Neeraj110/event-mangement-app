@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export interface Transaction {
-  id: string;
+  _id: string;
   eventName: string;
   eventId: string;
   date: string;
@@ -12,14 +12,14 @@ export interface Transaction {
 }
 
 export interface PurchaseSubscription {
-  id: string;
+  _id: string;
   name: string;
   status: "active" | "cancelled";
   renewalDate: string;
 }
 
 export interface PaymentMethod {
-  id: string;
+  _id: string;
   type: "visa" | "mastercard" | "amex" | "paypal";
   last4: string;
   expiryDate: string;
@@ -56,7 +56,7 @@ interface PurchasesActions {
 
 const mockTransactions: Transaction[] = [
   {
-    id: "txn-001",
+    _id: "txn-001",
     eventName: "Tech Summit 2024 - Platinum Pass",
     eventId: "event-001",
     date: "Oct 12, 2023",
@@ -65,7 +65,7 @@ const mockTransactions: Transaction[] = [
     status: "success",
   },
   {
-    id: "txn-002",
+    _id: "txn-002",
     eventName: "Design Workshop: AI & UX",
     eventId: "event-002",
     date: "Sep 28, 2023",
@@ -74,7 +74,7 @@ const mockTransactions: Transaction[] = [
     status: "success",
   },
   {
-    id: "txn-003",
+    _id: "txn-003",
     eventName: "Global AI Expo (Reserved)",
     eventId: "event-003",
     date: "Sep 15, 2023",
@@ -83,7 +83,7 @@ const mockTransactions: Transaction[] = [
     status: "refunded",
   },
   {
-    id: "txn-004",
+    _id: "txn-004",
     eventName: "Marketing Gala Dinner",
     eventId: "event-004",
     date: "Aug 20, 2023",
@@ -92,7 +92,7 @@ const mockTransactions: Transaction[] = [
     status: "success",
   },
   {
-    id: "txn-005",
+    _id: "txn-005",
     eventName: "Cloud Infrastructure Day",
     eventId: "event-005",
     date: "Aug 10, 2023",
@@ -104,14 +104,14 @@ const mockTransactions: Transaction[] = [
 
 const mockPaymentMethods: PaymentMethod[] = [
   {
-    id: "pm-001",
+    _id: "pm-001",
     type: "visa",
     last4: "1234",
     expiryDate: "12/26",
     default: true,
   },
   {
-    id: "pm-002",
+    _id: "pm-002",
     type: "mastercard",
     last4: "5678",
     expiryDate: "08/25",
@@ -124,19 +124,19 @@ export const usePurchasesStore = create<PurchasesState & PurchasesActions>(
     transactions: mockTransactions,
     subscriptions: [
       {
-        id: "sub-001",
+        _id: "sub-001",
         name: "VIP Annual Pass",
         status: "active",
         renewalDate: "12/26",
       },
       {
-        id: "sub-002",
+        _id: "sub-002",
         name: "Festival Season Pass",
         status: "active",
         renewalDate: "09/26",
       },
       {
-        id: "sub-003",
+        _id: "sub-003",
         name: "Early Bird Bundle",
         status: "active",
         renewalDate: "06/26",
@@ -177,7 +177,7 @@ export const usePurchasesStore = create<PurchasesState & PurchasesActions>(
       set((state) => ({
         paymentMethods: state.paymentMethods.map((pm) => ({
           ...pm,
-          default: pm.id === id,
+          default: pm._id === id,
         })),
       })),
   }),

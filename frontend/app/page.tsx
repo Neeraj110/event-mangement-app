@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, MapPin, ChevronRight } from 'lucide-react';
@@ -9,10 +9,43 @@ import { Header } from '@/components/header';
 import { CategoryCard } from '@/components/category-card';
 import { EventCard } from '@/components/event-card';
 import { useEvents } from '@/lib/hooks/useEventQueries';
+import { useAuthStore } from '@/lib/stores/authStore';
+import { User } from '@/types';
 import Loading from './loading';
 import heroImages from "@/public/heroImage1.jpg";
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { setCredentials } = useAuthStore();
+
+  // ─── Handle OAuth callback (accessToken in URL) ─────
+  useEffect(() => {
+    const token = searchParams.get('accessToken');
+    if (token) {
+      // Fetch user profile with the token and store credentials
+      (async () => {
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || ''}/users/profile`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              credentials: 'include',
+            }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setCredentials(data.user as User, token);
+          }
+        } catch (err) {
+          console.error('OAuth callback error:', err);
+        }
+        // Clean the URL
+        router.replace('/', { scroll: false });
+      })();
+    }
+  }, [searchParams, router, setCredentials]);
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('New York, NY');
   const [category, setCategory] = useState('All Categories');
@@ -41,7 +74,7 @@ export default function Home() {
   ];
 
   const trendingEvents = (eventsData || []).slice(0, 6).map((event) => ({
-    id: event._id,
+    _id: event._id,
     title: event.title,
     date: new Date(event.startDate).toLocaleDateString('en-US', {
       month: 'short',
@@ -168,8 +201,8 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {trendingEvents.map((event) => (
             <EventCard
-              key={event.id}
-              id={event.id}
+              key={event._id}
+              _id={event._id}
               title={event.title}
               date={event.date}
               location={event.location}

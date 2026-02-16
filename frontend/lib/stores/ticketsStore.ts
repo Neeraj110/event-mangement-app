@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export interface Ticket {
-  id: string;
+  _id: string;
   eventId: string;
   eventTitle: string;
   eventImage: string;
@@ -46,25 +46,25 @@ export const useTicketsStore = create<TicketsState & TicketsActions>(
     updateTicketStatus: (ticketId, status) =>
       set((state) => {
         const allTickets = [...state.upcoming, ...state.past];
-        const ticket = allTickets.find((t) => t.id === ticketId);
+        const ticket = allTickets.find((t) => t._id === ticketId);
         if (!ticket) return state;
 
         const updated = { ...ticket, status };
-        const upcoming = allTickets.filter((t) => t.id !== ticketId);
-        const past = allTickets.filter((t) => t.id !== ticketId);
+        const upcoming = allTickets.filter((t) => t._id !== ticketId);
+        const past = allTickets.filter((t) => t._id !== ticketId);
 
         if (status === "confirmed" || status === "payment_processing") {
           return {
             upcoming: [
-              ...state.upcoming.filter((t) => t.id !== ticketId),
+              ...state.upcoming.filter((t) => t._id !== ticketId),
               updated,
             ],
-            past: state.past.filter((t) => t.id !== ticketId),
+            past: state.past.filter((t) => t._id !== ticketId),
           };
         }
         return {
-          upcoming: state.upcoming.filter((t) => t.id !== ticketId),
-          past: [...state.past.filter((t) => t.id !== ticketId), updated],
+          upcoming: state.upcoming.filter((t) => t._id !== ticketId),
+          past: [...state.past.filter((t) => t._id !== ticketId), updated],
         };
       }),
   }),

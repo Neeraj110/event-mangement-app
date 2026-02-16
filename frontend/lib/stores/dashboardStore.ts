@@ -14,7 +14,7 @@ export interface DashboardMetrics {
 }
 
 export interface DashboardEvent {
-  id: string;
+  _id: string;
   name: string;
   date: string;
   status: "upcoming" | "live" | "completed";
@@ -42,8 +42,6 @@ interface DashboardActions {
   updateSalesData: (data: SalesData[]) => void;
 }
 
-
-
 export const useDashboardStore = create<DashboardState & DashboardActions>(
   (set, get) => ({
     metrics: {
@@ -58,7 +56,7 @@ export const useDashboardStore = create<DashboardState & DashboardActions>(
       eventCapacityPercentage: 0,
       remainingSpots: 0,
     },
-    events:   [],
+    events: [],
     salesData: [],
     selectedEvent: null,
     isLoading: false,
@@ -69,7 +67,7 @@ export const useDashboardStore = create<DashboardState & DashboardActions>(
       })),
 
     setSelectedEvent: (id) => {
-      const event = get().events.find((e) => e.id === id) || null;
+      const event = get().events.find((e) => e._id === id) || null;
       set({ selectedEvent: event });
     },
 

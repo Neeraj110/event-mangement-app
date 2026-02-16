@@ -48,16 +48,8 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
       description: `Ticket purchase for ${event.title}`,
     };
 
-    // Use idempotency key if provided
-    const requestOptions: Stripe.RequestOptions = {};
-    if (idempotencyKey) {
-      requestOptions.idempotencyKey = idempotencyKey;
-    }
-
-    const paymentIntent = await stripe.paymentIntents.create(
-      paymentIntentOptions,
-      requestOptions,
-    );
+    const paymentIntent =
+      await stripe.paymentIntents.create(paymentIntentOptions);
 
     res.status(200).json({
       clientSecret: paymentIntent.client_secret,

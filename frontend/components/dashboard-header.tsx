@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
+
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useLogout } from '@/lib/hooks/useAuthQueries';
 import { useRouter } from 'next/navigation';
@@ -56,7 +56,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
 
           {/* Right Side */}
           <div className="flex items-center gap-3">
-            <ThemeToggle />
+
 
             {/* User Menu */}
             <div className="flex items-center gap-3">

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export interface EventItem {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   date: string;
@@ -64,7 +64,7 @@ export const useEventsStore = create<EventsState & EventsActions>(
       set({ allEvents: events, filteredEvents: events }),
 
     selectEvent: (id) => {
-      const event = get().allEvents.find((e) => e.id === id) || null;
+      const event = get().allEvents.find((e) => e._id === id) || null;
       set({ selectedEvent: event });
     },
 

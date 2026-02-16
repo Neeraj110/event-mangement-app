@@ -89,7 +89,7 @@ export const getAllEvents = async (req: Request, res: Response) => {
 export const getEventById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const event = await Event.findOne({ _id: id, isPublished: true }).populate(
+    const event = await Event.findById(id).populate(
       "organizerId",
       "name email",
     );

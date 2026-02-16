@@ -3,7 +3,7 @@ import { create } from "zustand";
 export type CheckInStatus = "success" | "duplicate" | "invalid" | "denied";
 
 export interface CheckInRecord {
-  id: string;
+  _id: string;
   attendeeName: string;
   ticketType: string;
   timestamp: string;
@@ -33,8 +33,6 @@ interface CheckInActions {
     eventCapacity?: number;
   }) => void;
 }
-
-
 
 export const useCheckInStore = create<CheckInState & CheckInActions>(
   (set, get) => ({

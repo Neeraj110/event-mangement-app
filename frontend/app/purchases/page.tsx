@@ -77,8 +77,8 @@ export default function PurchasesPage() {
                 key={tab}
                 onClick={() => setActiveTab(tab as typeof activeTab)}
                 className={`py-4 px-1 border-b-2 font-medium transition capitalize ${activeTab === tab
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-foreground/60 hover:text-foreground'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-foreground/60 hover:text-foreground'
                   }`}
               >
                 {tab}
@@ -111,11 +111,11 @@ export default function PurchasesPage() {
                 </thead>
                 <tbody>
                   {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b border-border hover:bg-muted/50 transition">
+                    <tr key={transaction._id} className="border-b border-border hover:bg-muted/50 transition">
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-semibold">{transaction.eventName}</p>
-                          <p className="text-xs text-foreground/60">TXN: {transaction.id}</p>
+                          <p className="text-xs text-foreground/60">TXN: {transaction._id}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">{transaction.date}</td>
@@ -159,7 +159,7 @@ export default function PurchasesPage() {
             <div className="space-y-3">
               {purchases.paymentMethods.map((method) => (
                 <div
-                  key={method.id}
+                  key={method._id}
                   className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition"
                 >
                   <div>

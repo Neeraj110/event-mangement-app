@@ -47,7 +47,7 @@ export function CheckInLog({ logs }: CheckInLogProps) {
     <div className="space-y-2">
       {logs.map((log) => (
         <div
-          key={log.id}
+          key={log._id}
           className={`flex items-center gap-4 p-4 rounded-lg border border-border transition ${getStatusBgColor(log.status)}`}
         >
           <div className="flex-shrink-0">{getStatusIcon(log.status)}</div>

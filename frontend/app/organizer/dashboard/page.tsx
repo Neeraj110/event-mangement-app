@@ -170,16 +170,16 @@ export default function OrganizerDashboard() {
               </thead>
               <tbody>
                 {dashboard.events.map((event) => (
-                  <tr key={event.id} className="border-b border-border hover:bg-muted/50 transition">
+                  <tr key={event._id} className="border-b border-border hover:bg-muted/50 transition">
                     <td className="px-4 py-4 font-semibold">{event.name}</td>
                     <td className="px-4 py-4 text-sm">{event.date}</td>
                     <td className="px-4 py-4">
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${event.status === 'live'
-                            ? 'bg-green-100 text-green-700'
-                            : event.status === 'upcoming'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-100 text-gray-700'
+                          ? 'bg-green-100 text-green-700'
+                          : event.status === 'upcoming'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700'
                           }`}
                       >
                         {event.status.toUpperCase()}

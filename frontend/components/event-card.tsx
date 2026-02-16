@@ -6,7 +6,7 @@ import { MapPin, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface EventCardProps {
-  id: string;
+  _id: string;
   title: string;
   date: string;
   location: string;
@@ -17,7 +17,7 @@ interface EventCardProps {
 }
 
 export function EventCard({
-  id,
+  _id,
   title,
   date,
   location,
@@ -27,7 +27,7 @@ export function EventCard({
   status,
 }: EventCardProps) {
   return (
-    <Link href={`/events/${id}`} className="group block h-full">
+    <Link href={`/events/${_id}`} className="group block h-full">
       <div className="relative h-full bg-card border border-border/50 rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-glow hover:-translate-y-1 group-hover:border-primary/20">
         {/* Image Section */}
         <div className="relative aspect-[4/3] overflow-hidden">
