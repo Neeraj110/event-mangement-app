@@ -72,8 +72,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieparser());
 app.use(morgan("dev"));
 
-// NoSQL injection prevention — sanitize req.body, req.query, req.params
-app.use(mongoSanitize());
+// NoSQL injection prevention — sanitize req.body and req.params
+// Note: req.query is read-only in newer Express, so we sanitize manually
+app.use((req, _res, next) => {
+  if (req.body) {
+    mongoSanitize.sanitize(req.body);
+  }
+  if (req.params) {
+    mongoSanitize.sanitize(req.params);
+  }
+  next();
+});
 
 // ─── Routes ──────────────────────────────────────────────
 app.use("/api/users", authLimiter, userRoutes);
