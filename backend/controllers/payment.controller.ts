@@ -8,10 +8,20 @@ import PaymentTransaction from "../models/paymentTransaction.model";
 import Ticket from "../models/ticket.model";
 import { v4 as uuidv4 } from "uuid";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_SECRET || "",
-});
+// Lazy initialization — avoids crash at module load if env vars are missing
+let _razorpay: InstanceType<typeof Razorpay> | null = null;
+function getRazorpay() {
+  if (!_razorpay) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_SECRET) {
+      throw new Error("RAZORPAY_KEY_ID and RAZORPAY_SECRET must be set");
+    }
+    _razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_SECRET,
+    });
+  }
+  return _razorpay;
+}
 
 /**
  * Create a Razorpay order for ticket purchase
@@ -56,7 +66,7 @@ export const createOrder = async (req: Request, res: Response) => {
     const amount = event.price * qty;
 
     // Create Razorpay order (amount in paise for INR)
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: Math.round(amount * 100),
       currency: "INR",
       receipt: `rcpt_${Date.now()}`,
@@ -136,7 +146,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
     // ─── 3. Server-side Payment Verification via Razorpay API ──
     let paymentDetails: any;
     try {
-      paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
+      paymentDetails = await getRazorpay().payments.fetch(razorpay_payment_id);
     } catch (fetchErr: any) {
       console.error("Failed to fetch payment from Razorpay:", fetchErr);
       return res
