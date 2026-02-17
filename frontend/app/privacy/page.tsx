@@ -27,7 +27,7 @@ export default function PrivacyPage() {
                         </p>
                         <ul className="list-disc list-inside space-y-2 text-foreground/70">
                             <li><strong>Account Information:</strong> Name, email address, profile picture, and login credentials</li>
-                            <li><strong>Payment Data:</strong> Billing address and payment method details (processed securely via Stripe)</li>
+                            <li><strong>Payment Data:</strong> Billing address and payment method details (processed securely via Razorpay)</li>
                             <li><strong>Event Data:</strong> Events you create, attend, or save</li>
                             <li><strong>Usage Data:</strong> Pages visited, features used, and interaction patterns</li>
                             <li><strong>Device Data:</strong> Browser type, IP address, and operating system</li>

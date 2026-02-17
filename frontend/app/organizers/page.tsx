@@ -23,7 +23,7 @@ const features = [
         icon: CreditCard,
         title: 'Secure Payments',
         description:
-            'Accept payments confidently with Stripe integration. Get paid quickly with automatic payouts.',
+            'Accept payments confidently with Razorpay integration. Get paid quickly with automatic payouts.',
     },
     {
         icon: Users,

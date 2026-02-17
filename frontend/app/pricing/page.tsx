@@ -82,8 +82,8 @@ export default function PricingPage() {
                             <div
                                 key={plan.name}
                                 className={`relative bg-card rounded-2xl p-8 flex flex-col ${plan.highlighted
-                                        ? 'border-2 border-blue-600 shadow-xl shadow-blue-600/10 scale-[1.02]'
-                                        : 'border border-border'
+                                    ? 'border-2 border-blue-600 shadow-xl shadow-blue-600/10 scale-[1.02]'
+                                    : 'border border-border'
                                     }`}
                             >
                                 {plan.highlighted && (
@@ -114,8 +114,8 @@ export default function PricingPage() {
 
                                 <Button
                                     className={`w-full font-semibold ${plan.highlighted
-                                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                            : ''
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        : ''
                                         }`}
                                     variant={plan.highlighted ? 'default' : 'outline'}
                                 >
@@ -135,7 +135,7 @@ export default function PricingPage() {
                         <div>
                             <h3 className="text-lg font-semibold mb-2">What payment methods do you accept?</h3>
                             <p className="text-foreground/70">
-                                We accept all major credit and debit cards through Stripe. Enterprise customers
+                                We accept all major credit and debit cards through Razorpay. Enterprise customers
                                 can also pay via invoice.
                             </p>
                         </div>

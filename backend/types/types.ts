@@ -5,7 +5,7 @@ export type UserRole = "user" | "organizer" | "admin";
 export type TicketStatus = "valid" | "used" | "cancelled";
 export type SubscriptionPlan = "free" | "pro";
 export type SubscriptionStatus = "active" | "cancelled";
-export type PaymentStatus = "success" | "refunded";
+export type PaymentStatus = "pending" | "success" | "failed" | "refunded";
 export type PayoutStatus = "pending" | "paid";
 export type AnalyticsEventType = "view" | "click" | "checkin";
 
@@ -27,7 +27,6 @@ export interface IUser {
   };
   createdAt: Date;
   refreshToken?: string;
-  stripeCustomerId?: string;
 }
 
 export interface IUserMethods {
@@ -85,7 +84,8 @@ export interface ICheckIn {
 
 export interface IPaymentTransaction {
   _id: Types.ObjectId;
-  stripePaymentIntentId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
   eventId: Types.ObjectId; // Event._id
   organizerId: Types.ObjectId; // User._id
   userId: Types.ObjectId; // Buyer User._id
@@ -100,8 +100,6 @@ export interface ISubscription {
   _id: Types.ObjectId;
   userId: Types.ObjectId; // User._id
   plan: SubscriptionPlan;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string;
   status: SubscriptionStatus;
   currentPeriodEnd: Date;
 }

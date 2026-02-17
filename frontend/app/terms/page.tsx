@@ -10,7 +10,7 @@ export default function TermsPage() {
       {/* Hero */}
       <section className="border-b border-border py-16 md:py-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">Terms of Service</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">Terms and Conditions</h1>
           <p className="text-xl text-foreground/70 max-w-2xl mx-auto">
             Last updated: February 2026
           </p>
@@ -66,7 +66,7 @@ export default function TermsPage() {
           <div>
             <h2 className="text-2xl font-bold mb-4">5. Payments & Refunds</h2>
             <p className="text-foreground/70 leading-relaxed">
-              Payments are processed securely through our payment partner, Stripe. Refund policies
+              Payments are processed securely through our payment partner, Razorpay. Refund policies
               are set by individual event organizers. Spot charges a service fee on ticket sales,
               which is non-refundable. Organizers receive payouts according to the payout schedule
               detailed in their dashboard.

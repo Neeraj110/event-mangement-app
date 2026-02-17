@@ -20,7 +20,7 @@ export default function AdminPaymentsPage() {
         if (!search) return payments;
         return payments.filter(
             (p: any) =>
-                p.stripePaymentIntentId?.toLowerCase().includes(search.toLowerCase()) ||
+                p.razorpayPaymentId?.toLowerCase().includes(search.toLowerCase()) ||
                 (typeof p.userId === 'object' && p.userId?.name?.toLowerCase().includes(search.toLowerCase())) ||
                 (typeof p.eventId === 'object' && p.eventId?.title?.toLowerCase().includes(search.toLowerCase()))
         );
@@ -197,7 +197,7 @@ export default function AdminPaymentsPage() {
                                         <div className="flex items-center gap-2">
                                             <CreditCard className="w-4 h-4 text-white/20 flex-shrink-0" />
                                             <span className="text-xs font-mono text-white/50 truncate max-w-[120px]">
-                                                {payment.stripePaymentIntentId || payment._id}
+                                                {payment.razorpayPaymentId || payment._id}
                                             </span>
                                         </div>
                                     </td>
@@ -220,10 +220,10 @@ export default function AdminPaymentsPage() {
                                     <td className="px-5 py-3.5">
                                         <span
                                             className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full ${payment.status === 'success'
-                                                    ? 'bg-emerald-500/15 text-emerald-400'
-                                                    : payment.status === 'refunded'
-                                                        ? 'bg-amber-500/15 text-amber-400'
-                                                        : 'bg-white/[0.06] text-white/30'
+                                                ? 'bg-emerald-500/15 text-emerald-400'
+                                                : payment.status === 'refunded'
+                                                    ? 'bg-amber-500/15 text-amber-400'
+                                                    : 'bg-white/[0.06] text-white/30'
                                                 }`}
                                         >
                                             {payment.status}

@@ -2,7 +2,7 @@ export type UserRole = "user" | "organizer" | "admin";
 export type TicketStatus = "valid" | "used" | "cancelled";
 export type SubscriptionPlan = "free" | "pro";
 export type SubscriptionStatus = "active" | "cancelled";
-export type PaymentStatus = "success" | "refunded";
+export type PaymentStatus = "pending" | "success" | "failed" | "refunded";
 export type PayoutStatus = "pending" | "paid";
 export type AnalyticsEventType = "view" | "click" | "checkin";
 
@@ -27,7 +27,6 @@ export interface User {
   };
   createdAt: string;
   refreshToken?: string;
-  stripeCustomerId?: string;
 }
 
 export interface Event {
@@ -67,7 +66,8 @@ export interface CheckIn {
 
 export interface PaymentTransaction {
   _id: string;
-  stripePaymentIntentId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
   eventId: string;
   organizerId: string;
   userId: string;
@@ -82,8 +82,6 @@ export interface Subscription {
   _id: string;
   userId: string;
   plan: SubscriptionPlan;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string;
   status: SubscriptionStatus;
   currentPeriodEnd: string;
 }
@@ -135,9 +133,17 @@ export interface EventStatsResponse {
   remainingCapacity: number;
 }
 
-export interface PaymentIntentResponse {
-  clientSecret: string;
-  paymentIntentId: string;
+export interface OrderResponse {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+}
+
+export interface VerifyPaymentResponse {
+  message: string;
+  transactionId: string;
+  ticketCount: number;
 }
 
 export interface ApiError {

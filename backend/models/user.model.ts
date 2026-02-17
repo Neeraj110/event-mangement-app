@@ -34,7 +34,6 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
     },
     bookmarks: [{ type: Schema.Types.ObjectId, ref: "Event" }],
     refreshToken: { type: String, default: null },
-    stripeCustomerId: { type: String, default: null },
   },
   { timestamps: true },
 );

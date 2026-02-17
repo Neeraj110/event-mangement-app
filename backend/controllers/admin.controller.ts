@@ -124,7 +124,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
 export const approvePayout = async (req: Request, res: Response) => {
   const { organizerId, amount } = req.body;
   try {
-    // Logic to transfer funds via Stripe Connect or record payout
+    // Logic to transfer funds via Razorpay or record payout
     res.status(200).json({
       message: `Payout of $${amount} approved for organizer ${organizerId}`,
     });

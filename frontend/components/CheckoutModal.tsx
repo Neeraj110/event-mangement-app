@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useCreatePaymentIntent } from '@/lib/hooks/usePaymentQueries';
+import { useCreateOrder, useVerifyPayment } from '@/lib/hooks/usePaymentQueries';
+import { useQueryClient } from '@tanstack/react-query';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
 
 interface CheckoutModalProps {
     eventId: string;
@@ -16,111 +19,90 @@ interface CheckoutModalProps {
     onClose: () => void;
 }
 
-function CheckoutForm({ onClose, eventTitle }: { onClose: () => void; eventTitle: string }) {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [errorMessage, setErrorMessage] = useState('');
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!stripe || !elements) return;
-
-        setIsProcessing(true);
-        setErrorMessage('');
-
-        const { error, paymentIntent } = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: window.location.href,
-            },
-            redirect: 'if_required',
-        });
-
-        if (error) {
-            setErrorMessage(error.message || 'Payment failed. Please try again.');
-            setPaymentStatus('error');
-        } else if (paymentIntent?.status === 'succeeded') {
-            setPaymentStatus('success');
-        }
-
-        setIsProcessing(false);
-    };
-
-    if (paymentStatus === 'success') {
-        return (
-            <div className="text-center py-8">
-                <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">Payment Successful!</h3>
-                <p className="text-foreground/60 mb-6">
-                    Your tickets for <strong>{eventTitle}</strong> have been booked.
-                    You&apos;ll receive a confirmation email shortly.
-                </p>
-                <button
-                    onClick={onClose}
-                    className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-                >
-                    Done
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <PaymentElement
-                options={{
-                    layout: 'tabs',
-                }}
-            />
-            {paymentStatus === 'error' && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {errorMessage}
-                </div>
-            )}
-            <button
-                type="submit"
-                disabled={!stripe || isProcessing}
-                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition flex items-center justify-center gap-2"
-            >
-                {isProcessing ? (
-                    <>
-                        <Loader2 className="w-5 h-5 animate-spin" /> Processing...
-                    </>
-                ) : (
-                    'Pay Now'
-                )}
-            </button>
-        </form>
-    );
-}
-
 export default function CheckoutModal({ eventId, eventTitle, price, quantity, onClose }: CheckoutModalProps) {
-    const createPaymentIntent = useCreatePaymentIntent();
-    const [clientSecret, setClientSecret] = useState<string | null>(null);
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const createOrder = useCreateOrder();
+    const verifyPayment = useVerifyPayment();
+    const queryClient = useQueryClient();
+    const [paymentStatus, setPaymentStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [errorMessage, setErrorMessage] = useState('');
 
     const totalAmount = price * quantity;
 
-    const handleInitPayment = async () => {
-        setIsLoading(true);
-        setError('');
-        try {
-            const result = await createPaymentIntent.mutateAsync({ eventId, quantity });
-            setClientSecret(result.clientSecret);
-        } catch (err: any) {
-            setError(err?.message || 'Failed to initialize payment. Please try again.');
-        }
-        setIsLoading(false);
-    };
+    // Load Razorpay script
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
 
-    // Auto-init payment on mount
-    if (!clientSecret && !isLoading && !error) {
-        handleInitPayment();
-    }
+    const handlePayment = useCallback(async () => {
+        setPaymentStatus('loading');
+        setErrorMessage('');
+
+        try {
+            // 1. Create order on backend
+            const orderData = await createOrder.mutateAsync({ eventId, quantity });
+
+            // 2. Open Razorpay checkout
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: 'Spot Events',
+                description: `Tickets for ${eventTitle}`,
+                order_id: orderData.orderId,
+                handler: async (response: any) => {
+                    try {
+                        // 3. Verify payment on backend
+                        await verifyPayment.mutateAsync({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            eventId,
+                            quantity,
+                        });
+                        setPaymentStatus('success');
+                        queryClient.invalidateQueries({ queryKey: ['tickets'] });
+                    } catch (err: any) {
+                        setErrorMessage(err?.message || 'Payment verification failed');
+                        setPaymentStatus('error');
+                    }
+                },
+                modal: {
+                    ondismiss: () => {
+                        if (paymentStatus !== 'success') {
+                            setPaymentStatus('idle');
+                        }
+                    },
+                },
+                theme: {
+                    color: '#2563eb',
+                },
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', (response: any) => {
+                setErrorMessage(response.error?.description || 'Payment failed. Please try again.');
+                setPaymentStatus('error');
+            });
+            rzp.open();
+        } catch (err: any) {
+            setErrorMessage(err?.message || 'Failed to initialize payment. Please try again.');
+            setPaymentStatus('error');
+        }
+    }, [eventId, eventTitle, quantity, createOrder, verifyPayment, paymentStatus]);
+
+    // Auto-start payment on mount
+    useEffect(() => {
+        if (paymentStatus === 'idle') {
+            handlePayment();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -130,7 +112,7 @@ export default function CheckoutModal({ eventId, eventTitle, price, quantity, on
                     <div>
                         <h2 className="text-lg font-bold">Checkout</h2>
                         <p className="text-sm text-foreground/50 mt-0.5">
-                            {quantity} ticket{quantity > 1 ? 's' : ''} · ${totalAmount.toFixed(2)}
+                            {quantity} ticket{quantity > 1 ? 's' : ''} · ₹{totalAmount.toFixed(2)}
                         </p>
                     </div>
                     <button
@@ -143,42 +125,55 @@ export default function CheckoutModal({ eventId, eventTitle, price, quantity, on
 
                 {/* Body */}
                 <div className="p-5">
-                    {error && (
-                        <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            {error}
+                    {paymentStatus === 'success' && (
+                        <div className="text-center py-8">
+                            <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold mb-2">Payment Successful!</h3>
+                            <p className="text-foreground/60 mb-6">
+                                Your tickets for <strong>{eventTitle}</strong> have been booked.
+                                You&apos;ll receive a confirmation email shortly.
+                            </p>
                             <button
-                                onClick={handleInitPayment}
-                                className="ml-auto text-xs font-medium underline"
+                                onClick={onClose}
+                                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
                             >
-                                Retry
+                                Done
                             </button>
                         </div>
                     )}
 
-                    {isLoading && (
+                    {paymentStatus === 'loading' && (
                         <div className="flex flex-col items-center justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-3" />
                             <p className="text-sm text-foreground/50">Preparing payment...</p>
                         </div>
                     )}
 
-                    {clientSecret && (
-                        <Elements
-                            stripe={stripePromise}
-                            options={{
-                                clientSecret,
-                                appearance: {
-                                    theme: 'stripe',
-                                    variables: {
-                                        colorPrimary: '#2563eb',
-                                        borderRadius: '8px',
-                                    },
-                                },
-                            }}
-                        >
-                            <CheckoutForm onClose={onClose} eventTitle={eventTitle} />
-                        </Elements>
+                    {paymentStatus === 'error' && (
+                        <div className="text-center py-8">
+                            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                            <p className="text-sm text-red-600 dark:text-red-400 mb-4">{errorMessage}</p>
+                            <button
+                                onClick={handlePayment}
+                                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    )}
+
+                    {paymentStatus === 'idle' && (
+                        <div className="text-center py-8">
+                            <p className="text-sm text-foreground/50 mb-4">
+                                Click below to pay ₹{totalAmount.toFixed(2)}
+                            </p>
+                            <button
+                                onClick={handlePayment}
+                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                            >
+                                Pay with Razorpay
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

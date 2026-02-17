@@ -5,7 +5,7 @@ const ticketSchema = new Schema<ITicket>(
   {
     eventId: { type: Schema.Types.ObjectId, ref: "Event", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    ticketCode: { type: String, required: true },
+    ticketCode: { type: String, required: true, unique: true },
     qrPayload: { type: String, required: true },
     status: {
       type: String,
@@ -16,5 +16,9 @@ const ticketSchema = new Schema<ITicket>(
   },
   { timestamps: true },
 );
+
+// Indexes for fast lookups
+ticketSchema.index({ userId: 1, status: 1 });
+ticketSchema.index({ eventId: 1, status: 1 });
 
 export default mongoose.model<ITicket>("Ticket", ticketSchema);

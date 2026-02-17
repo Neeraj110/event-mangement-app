@@ -9,8 +9,6 @@ const subscriptionSchema = new Schema<ISubscription>(
       enum: ["free", "pro"],
       required: true,
     },
-    stripeCustomerId: { type: String, required: true },
-    stripeSubscriptionId: { type: String, required: true },
     status: {
       type: String,
       enum: ["active", "cancelled"],
@@ -18,7 +16,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     },
     currentPeriodEnd: { type: Date, required: true },
   },
-  { timestamps: false },
+  { timestamps: true },
 );
 
 export default mongoose.model<ISubscription>(

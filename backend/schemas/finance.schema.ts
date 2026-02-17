@@ -2,8 +2,11 @@ import { z } from "zod";
 
 export const createPaymentTransactionSchema = z.object({
   body: z.object({
-    stripePaymentIntentId: z.string({
-      message: "Stripe Payment Intent ID is required",
+    razorpayOrderId: z.string({
+      message: "Razorpay Order ID is required",
+    }),
+    razorpayPaymentId: z.string({
+      message: "Razorpay Payment ID is required",
     }),
     eventId: z.string({ message: "Event ID is required" }),
     organizerId: z.string({ message: "Organizer ID is required" }),
@@ -19,12 +22,6 @@ export const createSubscriptionSchema = z.object({
   body: z.object({
     userId: z.string({ message: "User ID is required" }),
     plan: z.enum(["free", "pro"]),
-    stripeCustomerId: z.string({
-      message: "Stripe Customer ID is required",
-    }),
-    stripeSubscriptionId: z.string({
-      message: "Stripe Subscription ID is required",
-    }),
     status: z.enum(["active", "cancelled"]),
     currentPeriodEnd: z.string({
       message: "Current Period End is required",
