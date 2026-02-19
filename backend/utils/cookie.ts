@@ -2,15 +2,6 @@ import { Response, CookieOptions } from "express";
 
 const isProduction = () => process.env.NODE_ENV === "production";
 
-/**
- * Shared cookie options for the refresh token.
- * In production (cross-domain Vercel ↔ Render), we need:
- *   - secure: true          (HTTPS only)
- *   - sameSite: "none"      (allow cross-site cookie)
- * In development (same localhost origin):
- *   - secure: false
- *   - sameSite: "lax"       (default browser behaviour)
- */
 export const getRefreshTokenCookieOptions = (): CookieOptions => ({
   httpOnly: true,
   secure: isProduction(),
