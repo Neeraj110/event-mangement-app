@@ -6,6 +6,20 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// ─── Startup Validation ──────────────────────────────────
+const requiredEnvVars = [
+  "BACKEND_URL",
+  "FRONTEND_URL",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+] as const;
+
+for (const key of requiredEnvVars) {
+  if (!process.env[key]) {
+    console.warn(`⚠️  Missing env var: ${key} — OAuth may not work correctly.`);
+  }
+}
+
 passport.use(
   new GoogleStrategy(
     {

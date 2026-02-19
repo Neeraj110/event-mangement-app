@@ -4,6 +4,10 @@ import User from "../models/user.model";
 import { IUserDocument } from "../types/types";
 import { createUserSchema, loginUserSchema } from "../schemas/user.schema";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary";
+import {
+  setRefreshTokenCookie,
+  clearRefreshTokenCookie,
+} from "../utils/cookie";
 
 export const register = async (req: Request, res: Response) => {
   const result = createUserSchema.safeParse(req.body);
@@ -50,11 +54,7 @@ export const register = async (req: Request, res: Response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    setRefreshTokenCookie(res, refreshToken);
 
     res.status(201).json({
       message: "User registered successfully",
@@ -97,11 +97,7 @@ export const login = async (req: Request, res: Response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    setRefreshTokenCookie(res, refreshToken);
 
     res.status(200).json({
       accessToken,
@@ -132,7 +128,7 @@ export const logout = async (req: Request, res: Response) => {
       await User.findOneAndUpdate({ refreshToken }, { refreshToken: null });
     }
 
-    res.clearCookie("refreshToken");
+    clearRefreshTokenCookie(res);
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -254,11 +250,7 @@ export const socialAuthCallback = async (req: Request, res: Response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setRefreshTokenCookie(res, refreshToken);
 
     res.redirect(`${process.env.FRONTEND_URL}?accessToken=${accessToken}`);
   } catch (error) {

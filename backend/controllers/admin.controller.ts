@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { setRefreshTokenCookie } from "../utils/cookie";
 import User from "../models/user.model";
 import Event from "../models/event.model";
 import PaymentTransaction from "../models/paymentTransaction.model";
@@ -59,11 +60,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setRefreshTokenCookie(res, refreshToken);
 
     res.status(201).json({
       message: "Admin account created successfully",
