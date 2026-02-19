@@ -257,3 +257,43 @@ export const socialAuthCallback = async (req: Request, res: Response) => {
     res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
   }
 };
+
+export const upgradeToOrganizer = async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user as IUserDocument | undefined;
+    const user = await User.findById(currentUser?._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role === "organizer") {
+      return res.status(400).json({ message: "You are already an organizer" });
+    }
+
+    if (user.role === "admin") {
+      return res
+        .status(403)
+        .json({ message: "Admin accounts cannot change role" });
+    }
+
+    user.role = "organizer";
+    await user.save();
+
+    // Generate a new access token with updated role claim
+    const accessToken = user.generateAccessToken();
+
+    res.status(200).json({
+      message: "Successfully upgraded to organizer",
+      accessToken,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

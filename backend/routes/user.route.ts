@@ -7,6 +7,7 @@ import {
   getProfile,
   updateProfile,
   socialAuthCallback,
+  upgradeToOrganizer,
 } from "../controllers/user.controller";
 import upload from "../middlewares/multer.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -19,22 +20,28 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.post("/refresh", refreshAccessToken);
 
-// Google Auth
-router.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] }),
-);
+// Google Auth — pass selected role via OAuth state param
+router.get("/auth/google", (req, res, next) => {
+  const role = req.query.role === "organizer" ? "organizer" : "user";
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    state: role,
+  })(req, res, next);
+});
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", { session: false }),
   socialAuthCallback,
 );
 
-// GitHub Auth
-router.get(
-  "/auth/github",
-  passport.authenticate("github", { scope: ["user:email"] }),
-);
+// GitHub Auth — pass selected role via OAuth state param
+router.get("/auth/github", (req, res, next) => {
+  const role = req.query.role === "organizer" ? "organizer" : "user";
+  passport.authenticate("github", {
+    scope: ["user:email"],
+    state: role,
+  })(req, res, next);
+});
 router.get(
   "/auth/github/callback",
   passport.authenticate("github", { session: false }),
@@ -44,5 +51,6 @@ router.get(
 router.use(authMiddleware);
 router.get("/profile", getProfile);
 router.put("/update", upload.single("profileImage"), updateProfile);
+router.patch("/upgrade-role", upgradeToOrganizer);
 
 export default router;

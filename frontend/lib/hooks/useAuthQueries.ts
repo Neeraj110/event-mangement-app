@@ -89,3 +89,24 @@ export function useUpdateProfile() {
     },
   });
 }
+
+export function useUpgradeToOrganizer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () =>
+      apiClient<{
+        message: string;
+        accessToken: string;
+        user: { _id: string; name: string; email: string; role: string };
+      }>("/users/upgrade-role", {
+        method: "PATCH",
+      }),
+    onSuccess: (data) => {
+      useAuthStore
+        .getState()
+        .setCredentials(data.user as unknown as User, data.accessToken);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}

@@ -1,18 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, LogOut, ChevronDown, Plus } from 'lucide-react';
+import { Bell, LogOut, ChevronDown, Plus, ArrowUpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/stores/authStore';
-import { useLogout } from '@/lib/hooks/useAuthQueries';
+import { useLogout, useUpgradeToOrganizer } from '@/lib/hooks/useAuthQueries';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 export function Header() {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
   const isLoggedIn = !!accessToken && !!user;
   const logoutMutation = useLogout();
+  const upgradeMutation = useUpgradeToOrganizer();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -36,6 +38,16 @@ export function Header() {
       useAuthStore.getState().clearCredentials();
     }
     router.push('/login');
+  };
+
+  const handleUpgrade = async () => {
+    setMenuOpen(false);
+    try {
+      await upgradeMutation.mutateAsync();
+      toast.success('You are now an organizer! You can create events.');
+    } catch {
+      toast.error('Failed to upgrade. Please try again.');
+    }
   };
 
   const getInitials = () => {
@@ -138,6 +150,16 @@ export function Header() {
                     >
                       My Tickets
                     </Link>
+                    {user?.role === 'user' && (
+                      <button
+                        onClick={handleUpgrade}
+                        disabled={upgradeMutation.isPending}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition"
+                      >
+                        <ArrowUpCircle className="w-4 h-4" />
+                        {upgradeMutation.isPending ? 'Upgrading...' : 'Become an Organizer'}
+                      </button>
+                    )}
                     <div className="border-t border-border mt-1 pt-1">
                       <button
                         onClick={handleLogout}

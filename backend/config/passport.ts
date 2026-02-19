@@ -26,14 +26,19 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       callbackURL: `${process.env.BACKEND_URL || "http://localhost:5000"}/api/users/auth/google/callback`,
+      passReqToCallback: true,
     },
     async (
+      req: any,
       accessToken: string,
       refreshToken: string,
       profile: any,
       done: any,
     ) => {
       try {
+        const requestedRole =
+          req.query?.state === "organizer" ? "organizer" : "user";
+
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
@@ -48,6 +53,7 @@ passport.use(
               email: profile.emails?.[0].value,
               googleId: profile.id,
               profileImage: profile.photos?.[0].value,
+              role: requestedRole,
             });
           }
         }
@@ -67,14 +73,19 @@ passport.use(
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       callbackURL: `${process.env.BACKEND_URL || "http://localhost:5000"}/api/users/auth/github/callback`,
       scope: ["user:email"],
+      passReqToCallback: true,
     },
     async (
+      req: any,
       accessToken: string,
       refreshToken: string,
       profile: any,
       done: any,
     ) => {
       try {
+        const requestedRole =
+          req.query?.state === "organizer" ? "organizer" : "user";
+
         let user = await User.findOne({ githubId: profile.id });
 
         if (!user) {
@@ -95,6 +106,7 @@ passport.use(
               email: email,
               githubId: profile.id,
               profileImage: profile.photos?.[0]?.value,
+              role: requestedRole,
             });
           }
         }
