@@ -28,7 +28,7 @@ export function EventCard({
 }: EventCardProps) {
   return (
     <Link href={`/events/${_id}`} className="group block h-full">
-      <div className="relative h-full bg-card border border-border/50 rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-glow hover:-translate-y-1 group-hover:border-primary/20">
+      <div className="relative h-full bg-card border border-border/50 rounded-xl sm:rounded-[2rem] overflow-hidden transition-all duration-300 hover:shadow-glow hover:-translate-y-1 group-hover:border-primary/20">
         {/* Image Section */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
@@ -55,7 +55,7 @@ export function EventCard({
         </div>
 
         {/* Content Section */}
-        <div className="p-6 flex flex-col h-[calc(100%-aspect-[4/3])]">
+        <div className="p-4 sm:p-6 flex flex-col h-[calc(100%-aspect-[4/3])]">
           <div className="mb-4">
             <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary mb-2">
               {category}
@@ -73,12 +73,12 @@ export function EventCard({
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Price from</span>
               <span className="text-lg font-bold text-foreground">
-                {price > 0 ? `$${price}` : <span className="text-green-500">Free</span>}
+                {price > 0 ? `₹${price}` : <span className="text-green-500">Free</span>}
               </span>
             </div>
 
             <Button
-              className="rounded-full px-6 bg-primary hover:bg-primary-hover text-white font-medium shadow-lg hover:shadow-primary/25 transition-all"
+              className="rounded-full px-4 sm:px-6 bg-primary hover:bg-primary-hover text-white font-medium shadow-lg hover:shadow-primary/25 transition-all text-sm sm:text-base"
             >
               Get Tickets
             </Button>

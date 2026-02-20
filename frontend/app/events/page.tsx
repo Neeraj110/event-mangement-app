@@ -17,7 +17,7 @@ export default function EventsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recommended');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const searchParams = useSearchParams();
 
   // Sync fetched events into the Zustand store for local filtering
@@ -138,10 +138,31 @@ export default function EventsPage() {
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-6">
-          {/* Sidebar Filters - Hidden on mobile */}
+          {/* Desktop Sidebar Filters */}
           {showFilters && (
             <div className="hidden md:block md:w-56 flex-shrink-0">
               <EventFilters />
+            </div>
+          )}
+
+          {/* Mobile Filter Overlay */}
+          {showFilters && (
+            <div className="fixed inset-0 z-50 md:hidden">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
+              <div className="absolute right-0 top-0 bottom-0 w-[85%] max-w-xs bg-background shadow-xl overflow-y-auto animate-in slide-in-from-right duration-300">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                  <h3 className="font-semibold text-lg">Filters</h3>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="p-2 hover:bg-muted rounded-lg transition"
+                  >
+                    <Sliders className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-5">
+                  <EventFilters />
+                </div>
+              </div>
             </div>
           )}
 
@@ -174,8 +195,8 @@ export default function EventsPage() {
                 ) : (
                   <div className="space-y-4">
                     {filteredEvents.map((event) => (
-                      <div key={event._id} className="flex gap-4 p-4 border border-border rounded-lg hover:shadow-md transition">
-                        <div className="w-48 h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                      <div key={event._id} className="flex flex-col sm:flex-row gap-4 p-4 border border-border rounded-lg hover:shadow-md transition">
+                        <div className="w-full sm:w-48 h-48 sm:h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                           <img src={event.image || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 py-2">
@@ -188,7 +209,7 @@ export default function EventsPage() {
                           </div>
                           <div className="flex items-center gap-4">
                             <span className="font-semibold">
-                              {event.price > 0 ? `$${event.price}` : 'Free'}
+                              {event.price > 0 ? `₹${event.price}` : 'Free'}
                             </span>
                             <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                               View Tickets

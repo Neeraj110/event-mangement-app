@@ -39,7 +39,7 @@ export default function AdminDashboardPage() {
         },
         {
             label: 'Total Revenue',
-            value: `$${totalRevenue.toLocaleString()}`,
+            value: `₹${totalRevenue.toLocaleString()}`,
             icon: DollarSign,
             color: 'from-amber-500 to-amber-600',
             bg: 'bg-amber-500/10',
@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
         },
         {
             label: 'Platform Fees',
-            value: `$${platformFees.toLocaleString()}`,
+            value: `₹${platformFees.toLocaleString()}`,
             icon: TrendingUp,
             color: 'from-purple-500 to-purple-600',
             bg: 'bg-purple-500/10',
@@ -133,10 +133,10 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <span
                                     className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${user.role === 'admin'
-                                            ? 'bg-red-500/15 text-red-400'
-                                            : user.role === 'organizer'
-                                                ? 'bg-amber-500/15 text-amber-400'
-                                                : 'bg-blue-500/15 text-blue-400'
+                                        ? 'bg-red-500/15 text-red-400'
+                                        : user.role === 'organizer'
+                                            ? 'bg-amber-500/15 text-amber-400'
+                                            : 'bg-blue-500/15 text-blue-400'
                                         }`}
                                 >
                                     {user.role}

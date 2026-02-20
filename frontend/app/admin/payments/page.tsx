@@ -2,7 +2,7 @@
 
 import { useAllPayments, useApprovePayout } from '@/lib/hooks/useAdminQueries';
 import { useState, useMemo } from 'react';
-import { Search, Loader2, CreditCard, DollarSign, Send, CheckCircle2 } from 'lucide-react';
+import { Search, Loader2, CreditCard, Send, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function AdminPaymentsPage() {
@@ -85,7 +85,7 @@ export default function AdminPaymentsPage() {
                         Total Revenue
                     </p>
                     <p className="text-2xl font-bold text-white mt-1">
-                        ${totalRevenue.toLocaleString()}
+                        ₹{totalRevenue.toLocaleString()}
                     </p>
                 </div>
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
@@ -93,7 +93,7 @@ export default function AdminPaymentsPage() {
                         Platform Fees
                     </p>
                     <p className="text-2xl font-bold text-emerald-400 mt-1">
-                        ${totalFees.toLocaleString()}
+                        ₹{totalFees.toLocaleString()}
                     </p>
                 </div>
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
@@ -101,7 +101,7 @@ export default function AdminPaymentsPage() {
                         Organizer Payouts
                     </p>
                     <p className="text-2xl font-bold text-amber-400 mt-1">
-                        ${totalOrganizerShare.toLocaleString()}
+                        ₹{totalOrganizerShare.toLocaleString()}
                     </p>
                 </div>
             </div>
@@ -121,7 +121,7 @@ export default function AdminPaymentsPage() {
                         className="flex-1 px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition"
                     />
                     <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/25 font-medium">₹</span>
                         <input
                             type="number"
                             placeholder="Amount"
@@ -174,6 +174,9 @@ export default function AdminPaymentsPage() {
                                     User
                                 </th>
                                 <th className="px-5 py-3 text-left text-[10px] font-semibold text-white/30 uppercase tracking-wider">
+                                    Organizer ID
+                                </th>
+                                <th className="px-5 py-3 text-left text-[10px] font-semibold text-white/30 uppercase tracking-wider">
                                     Event
                                 </th>
                                 <th className="px-5 py-3 text-left text-[10px] font-semibold text-white/30 uppercase tracking-wider">
@@ -206,16 +209,23 @@ export default function AdminPaymentsPage() {
                                             ? payment.userId?.name || payment.userId?.email
                                             : payment.userId?.slice(0, 8) + '...'}
                                     </td>
+                                    <td className="px-5 py-3.5">
+                                        <span className="text-xs font-mono text-indigo-400/70 bg-indigo-500/10 px-2 py-1 rounded">
+                                            {typeof payment.eventId === 'object'
+                                                ? payment.eventId?.organizer || payment.eventId?.organizerId || '—'
+                                                : '—'}
+                                        </span>
+                                    </td>
                                     <td className="px-5 py-3.5 text-sm text-white/50">
                                         {typeof payment.eventId === 'object'
                                             ? payment.eventId?.title
                                             : payment.eventId?.slice(0, 8) + '...'}
                                     </td>
                                     <td className="px-5 py-3.5 text-sm font-semibold text-white/80">
-                                        ${payment.amount?.toFixed(2)}
+                                        ₹{payment.amount?.toFixed(2)}
                                     </td>
                                     <td className="px-5 py-3.5 text-sm text-emerald-400/80">
-                                        ${payment.platformFee?.toFixed(2)}
+                                        ₹{payment.platformFee?.toFixed(2)}
                                     </td>
                                     <td className="px-5 py-3.5">
                                         <span

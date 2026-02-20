@@ -240,7 +240,7 @@ export default function EventDetailsPage({ params }: { params: Promise<{ id: str
                   <iframe
                     src={`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3000!2d${event.location.lng}!3d${event.location.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1`}
                     width="100%"
-                    height="350"
+                    height="250"
                     style={{ border: 0 }}
                     allowFullScreen
                     loading="lazy"
@@ -317,7 +317,7 @@ export default function EventDetailsPage({ params }: { params: Promise<{ id: str
               <div>
                 <p className="text-sm text-foreground/50 mb-1">Price per ticket</p>
                 <p className="text-4xl font-bold text-blue-600">
-                  {event.price > 0 ? `$${event.price.toFixed(2)}` : 'Free'}
+                  {event.price > 0 ? `₹${event.price.toFixed(2)}` : 'Free'}
                 </p>
               </div>
 
@@ -405,6 +405,25 @@ export default function EventDetailsPage({ params }: { params: Promise<{ id: str
           onClose={() => setShowCheckout(false)}
         />
       )}
+      {/* Mobile Sticky Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 flex items-center justify-between gap-4 lg:hidden">
+        <div>
+          <p className="text-xs text-foreground/50">Price per ticket</p>
+          <p className="text-xl font-bold text-blue-600">
+            {event.price > 0 ? `₹${event.price.toFixed(2)}` : 'Free'}
+          </p>
+        </div>
+        <Button
+          onClick={handleGetTickets}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-sm font-semibold rounded-xl"
+        >
+          <Ticket className="w-4 h-4 mr-1.5" />
+          {event.price > 0 ? 'Get Tickets' : 'Register Free'}
+        </Button>
+      </div>
+
+      {/* Bottom padding to account for sticky bar on mobile */}
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }

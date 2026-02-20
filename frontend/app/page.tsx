@@ -92,9 +92,9 @@ export default function Home() {
       <Header />
 
       {/* Hero Section */}
-      <section className="pt-2 pb-10 sm:px-6 lg:px-6">
+      <section className="pt-2 pb-10 px-3 sm:px-6 lg:px-6">
         <div className="mx-auto max-w-7xl">
-          <div className="relative overflow-hidden min-h-[550px] bg-slate-900 rounded-[2.5rem] shadow-2xl ring-1 ring-white/10 group">
+          <div className="relative overflow-hidden min-h-[420px] md:min-h-[550px] bg-slate-900 rounded-2xl md:rounded-[2.5rem] shadow-2xl ring-1 ring-white/10 group">
             {/* Background Images Carousel */}
             <div className="absolute inset-0 z-0">
               <div
@@ -121,7 +121,7 @@ export default function Home() {
                 <span className="text-xs font-bold tracking-wider uppercase">Find Your Next Experience</span>
               </div>
 
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-white drop-shadow-lg tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-white drop-shadow-lg tracking-tight leading-tight">
                 Events that <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">move you</span>
               </h1>
 
@@ -215,9 +215,9 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 sm:px-6 lg:px-8">
+      <section className="py-16 px-3 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative rounded-[2.5rem] bg-blue-600 px-6 py-16 md:px-16 md:py-20 overflow-hidden shadow-2xl">
+          <div className="relative rounded-2xl md:rounded-[2.5rem] bg-blue-600 px-5 py-12 md:px-16 md:py-20 overflow-hidden shadow-2xl">
             {/* Subtle background gradient effect */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none mix-blend-overlay"></div>
             <div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none mix-blend-overlay"></div>

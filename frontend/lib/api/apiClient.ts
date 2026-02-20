@@ -45,6 +45,10 @@ const AUTH_ENDPOINTS = [
   "/users/register",
   "/users/refresh",
   "/users/logout",
+  "/users/verify-otp",
+  "/users/resend-otp",
+  "/users/forgot-password",
+  "/users/reset-password",
   "/admin/register",
   "/admin/check-exists",
 ];

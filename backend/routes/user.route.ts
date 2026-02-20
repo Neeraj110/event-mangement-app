@@ -8,6 +8,10 @@ import {
   updateProfile,
   socialAuthCallback,
   upgradeToOrganizer,
+  verifySignupOTP,
+  resendOTP,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/user.controller";
 import upload from "../middlewares/multer.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -15,7 +19,12 @@ import passport from "passport";
 
 const router = express.Router();
 
+// ─── Public Auth Routes ─────────────────────────────────
 router.post("/register", upload.single("profileImage"), register);
+router.post("/verify-otp", verifySignupOTP);
+router.post("/resend-otp", resendOTP);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 router.post("/login", login);
 router.post("/logout", logout);
 router.post("/refresh", refreshAccessToken);
@@ -48,6 +57,7 @@ router.get(
   socialAuthCallback,
 );
 
+// ─── Protected Routes ───────────────────────────────────
 router.use(authMiddleware);
 router.get("/profile", getProfile);
 router.put("/update", upload.single("profileImage"), updateProfile);

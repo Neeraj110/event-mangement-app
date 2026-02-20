@@ -117,6 +117,11 @@ export interface LoginResponse {
 
 export interface RegisterResponse {
   message: string;
+  email: string;
+}
+
+export interface VerifyOTPResponse {
+  message: string;
   accessToken: string;
   user: {
     _id: string;
@@ -124,6 +129,10 @@ export interface RegisterResponse {
     email: string;
     role: UserRole;
   };
+}
+
+export interface OTPResponse {
+  message: string;
 }
 
 export interface EventStatsResponse {

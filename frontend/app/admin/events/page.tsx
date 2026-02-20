@@ -183,7 +183,7 @@ export default function AdminEventsPage() {
                                             : '—'}
                                     </td>
                                     <td className="px-5 py-3.5 text-sm font-medium text-white/60">
-                                        {event.price ? `$${event.price}` : 'Free'}
+                                        {event.price ? `₹${event.price}` : 'Free'}
                                     </td>
                                     <td className="px-5 py-3.5 text-sm text-white/40">
                                         {typeof event.organizerId === 'object'
@@ -206,8 +206,8 @@ export default function AdminEventsPage() {
                                                 onClick={() => togglePublishMutation.mutate(event._id)}
                                                 disabled={togglePublishMutation.isPending}
                                                 className={`p-2 rounded-lg transition flex items-center gap-1.5 text-xs font-medium ${event.isPublished
-                                                        ? 'text-amber-400 hover:bg-amber-500/10'
-                                                        : 'text-emerald-400 hover:bg-emerald-500/10'
+                                                    ? 'text-amber-400 hover:bg-amber-500/10'
+                                                    : 'text-emerald-400 hover:bg-emerald-500/10'
                                                     }`}
                                                 title={event.isPublished ? 'Unpublish event' : 'Publish event'}
                                             >
