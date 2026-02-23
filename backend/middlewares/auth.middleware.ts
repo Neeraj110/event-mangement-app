@@ -46,3 +46,35 @@ export const authorizeRoles = (...roles: string[]) => {
     next();
   };
 };
+
+// ─── Optional Auth: sets req.user if valid token, continues otherwise ───
+export const optionalAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const accessToken = req.headers.authorization?.split(" ")[1];
+
+  if (!accessToken) {
+    return next(); // No token — continue as anonymous
+  }
+
+  try {
+    const decoded = jwt.verify(
+      accessToken,
+      process.env.ACCESS_TOKEN_SECRET!,
+    ) as {
+      _id: string;
+      role: string;
+    };
+
+    const user = await User.findById(decoded._id);
+    if (user) {
+      req.user = user;
+    }
+  } catch {
+    // Invalid token — silently continue as anonymous
+  }
+
+  next();
+};

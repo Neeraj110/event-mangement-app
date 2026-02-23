@@ -5,6 +5,7 @@ import {
   deleteEventByAdmin,
   getAllPayments,
   approvePayout,
+  getOrganizerPaymentSummaries,
   checkAdminExists,
   registerAdmin,
   toggleEventPublish,
@@ -26,6 +27,7 @@ router.get("/events", getAllEvents);
 router.delete("/events/:id", deleteEventByAdmin);
 router.patch("/events/:id/publish", toggleEventPublish);
 router.get("/payments", getAllPayments);
+router.get("/organizer-payments", getOrganizerPaymentSummaries);
 router.post("/payouts", approvePayout);
 
 export default router;

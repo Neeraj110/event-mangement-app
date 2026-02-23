@@ -1,11 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { EventForm } from '@/components/event-form';
 import { useEventById } from '@/lib/hooks/useEventQueries';
+
+const EventForm = dynamic(() => import('@/components/event-form').then(m => ({ default: m.EventForm })), {
+    ssr: false,
+    loading: () => (
+        <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+    ),
+});
 
 export default function EditEventPage() {
     const params = useParams();

@@ -3,16 +3,18 @@ import {
   createEvent,
   getAllEvents,
   getEventById,
+  getPersonalizedEvents,
   updateEvent,
   deleteEvent,
 } from "../controllers/event.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { authMiddleware, optionalAuth } from "../middlewares/auth.middleware";
 import upload from "../middlewares/multer.middleware";
 
 const router = express.Router();
 
 // Public Routes
 router.get("/", getAllEvents);
+router.get("/personalized", optionalAuth, getPersonalizedEvents);
 router.get("/:id", getEventById);
 
 // Protected Routes

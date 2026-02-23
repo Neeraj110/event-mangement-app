@@ -155,6 +155,18 @@ export interface VerifyPaymentResponse {
   ticketCount: number;
 }
 
+export interface OrganizerPaymentSummary {
+  organizerId: string;
+  organizerName: string;
+  organizerEmail: string;
+  totalEarned: number;
+  totalPaid: number;
+  remainingAmount: number;
+  paymentStatus: "fully_paid" | "partially_paid" | "unpaid";
+  transactionCount: number;
+  payoutCount: number;
+}
+
 export interface ApiError {
   message: string;
   errors?: Record<string, any>;

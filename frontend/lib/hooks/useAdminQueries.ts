@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/apiClient";
-import { User, Event, PaymentTransaction, Payout } from "@/types";
+import {
+  User,
+  Event,
+  PaymentTransaction,
+  Payout,
+  OrganizerPaymentSummary,
+} from "@/types";
 
 export function useAllUsers() {
   return useQuery({
@@ -35,6 +41,16 @@ export function useAllPayments() {
   return useQuery({
     queryKey: ["admin", "payments"],
     queryFn: () => apiClient<PaymentTransaction[]>("/admin/payments"),
+  });
+}
+
+export function useOrganizerPayments() {
+  return useQuery({
+    queryKey: ["admin", "organizer-payments"],
+    queryFn: () =>
+      apiClient<{ summaries: OrganizerPaymentSummary[] }>(
+        "/admin/organizer-payments",
+      ),
   });
 }
 

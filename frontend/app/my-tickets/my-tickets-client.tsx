@@ -24,8 +24,12 @@ function MyTicketsContent() {
         tickets.forEach((ticket: any) => {
             const event = ticket.eventId;
             if (!event) return;
-            const eventDate = new Date(event.startDate);
-            if (eventDate >= now && ticket.status !== 'cancelled') {
+
+            // Use endDate if available, otherwise fallback to startDate
+            const eventEnd = new Date(event.endDate || event.startDate);
+            const isUpcoming = eventEnd >= now && ticket.status === 'valid';
+
+            if (isUpcoming) {
                 upcomingTickets.push(ticket);
             } else {
                 pastTickets.push(ticket);

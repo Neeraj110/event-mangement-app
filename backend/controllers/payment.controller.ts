@@ -7,6 +7,8 @@ import Event from "../models/event.model";
 import PaymentTransaction from "../models/paymentTransaction.model";
 import Ticket from "../models/ticket.model";
 import { v4 as uuidv4 } from "uuid";
+import { cacheDelete, cacheDeletePattern } from "../utils/cache";
+import { getIO } from "../config/socket";
 
 // Lazy initialization — avoids crash at module load if env vars are missing
 let _razorpay: InstanceType<typeof Razorpay> | null = null;
@@ -230,6 +232,31 @@ export const verifyPayment = async (req: Request, res: Response) => {
     console.log(
       `✅ Created ${qty} tickets for user ${userId}, event ${eventId}`,
     );
+
+    // ─── 6. Invalidate caches ──────────────────────────────
+    await cacheDelete(`event:${eventId}`);
+    await cacheDeletePattern("events:list:*");
+    await cacheDelete(`organizer:stats:${eventId}`);
+    await cacheDelete(`checkin:stats:${eventId}`);
+
+    // ─── 7. Emit real-time ticket update via Socket.io ─────
+    try {
+      const totalSoldNow = soldTickets + qty;
+      const remainingTickets = event.capacity - totalSoldNow;
+
+      getIO()
+        .to(`event:${eventId}`)
+        .emit("tickets:update", {
+          eventId,
+          totalSold: totalSoldNow,
+          remainingTickets,
+          capacity: event.capacity,
+          soldOut: remainingTickets <= 0,
+        });
+    } catch (socketErr) {
+      // Don't fail the payment if socket emission fails
+      console.error("Socket emission error:", socketErr);
+    }
 
     res.status(200).json({
       message: "Payment verified and tickets created",

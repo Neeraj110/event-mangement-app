@@ -60,6 +60,7 @@ export interface IEvent {
   capacity: number;
   organizerId: Types.ObjectId; // User._id
   isPublished: boolean;
+  isArchived: boolean;
   createdAt: Date;
 }
 

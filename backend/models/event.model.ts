@@ -18,6 +18,7 @@ const eventSchema = new Schema<IEvent>(
     capacity: { type: Number, required: true },
     organizerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     isPublished: { type: Boolean, default: false },
+    isArchived: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

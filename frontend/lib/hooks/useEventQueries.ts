@@ -22,6 +22,20 @@ export function useEventById(id: string) {
   });
 }
 
+export function usePersonalizedEvents() {
+  return useQuery({
+    queryKey: ["events", "personalized"],
+    queryFn: async () => {
+      const response = await apiClient<{
+        events: Event[];
+        personalized: boolean;
+        matchedCount?: number;
+      }>("/events/personalized");
+      return response;
+    },
+  });
+}
+
 // ─── Mutations ─────────────────────────────────────────
 
 export function useCreateEvent() {

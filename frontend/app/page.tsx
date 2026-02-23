@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { CategoryCard } from '@/components/category-card';
 import { EventCard } from '@/components/event-card';
-import { useEvents } from '@/lib/hooks/useEventQueries';
+import { usePersonalizedEvents } from '@/lib/hooks/useEventQueries';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { User } from '@/types';
 import Loading from './loading';
@@ -50,7 +50,9 @@ export default function Home() {
   const [location, setLocation] = useState('New York, NY');
   const [category, setCategory] = useState('All Categories');
 
-  const { data: eventsData, isLoading, error } = useEvents();
+  const { data: personalizedData, isLoading, error } = usePersonalizedEvents();
+  const eventsData = personalizedData?.events;
+  const isPersonalized = personalizedData?.personalized || false;
 
   if (isLoading) {
     return <Loading />;
@@ -187,10 +189,10 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold">Trending Near You</h2>
+            <h2 className="text-2xl font-bold">{isPersonalized ? 'Recommended For You' : 'Trending Near You'}</h2>
             <div className="flex items-center gap-1 text-sm text-foreground/60 mt-1">
               <span>●</span>
-              <span>Popular in New York</span>
+              <span>{isPersonalized ? 'Based on your interests' : 'Popular in New York'}</span>
             </div>
           </div>
           <Link href="/events" className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
@@ -236,9 +238,11 @@ export default function Home() {
               </div>
 
               <div className="flex flex-col w-full md:w-auto gap-4 min-w-[200px] shrink-0">
-                <Button className="w-full bg-white text-blue-600 hover:bg-gray-50 text-base md:text-lg h-12 md:h-14 font-bold shadow-lg transition-all hover:scale-105">
-                  Create an Event
-                </Button>
+                <Link href="/organizer/events/new" className="w-full">
+                  <Button className="w-full bg-white text-blue-600 hover:bg-gray-50 text-base md:text-lg h-12 md:h-14 font-bold shadow-lg transition-all hover:scale-105">
+                    Create an Event
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   className="w-full border-2 border-white/30 text-white hover:bg-white/10 bg-transparent text-base md:text-lg h-12 md:h-14 font-semibold backdrop-blur-sm transition-all hover:border-white"

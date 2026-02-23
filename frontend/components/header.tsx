@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, LogOut, ChevronDown, Plus, ArrowUpCircle, Menu, X } from 'lucide-react';
+import { Bell, LogOut, ChevronDown, Plus, ArrowUpCircle, Menu, X, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useLogout, useUpgradeToOrganizer } from '@/lib/hooks/useAuthQueries';
@@ -156,6 +156,16 @@ export function Header() {
                         Organizer Dashboard
                       </Link>
                     )}
+                    {user?.role === 'organizer' && (
+                      <Link
+                        href="/organizer/checkin"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground/70 hover:bg-muted hover:text-foreground transition"
+                      >
+                        <QrCode className="w-4 h-4" />
+                        Ticket Check-in
+                      </Link>
+                    )}
                     <Link
                       href="/my-tickets"
                       onClick={() => setMenuOpen(false)}
@@ -234,8 +244,8 @@ export function Header() {
       {/* Slide-down panel */}
       <div
         className={`fixed top-16 left-0 right-0 bg-background border-b border-border shadow-xl z-50 transition-all duration-300 ease-in-out md:hidden overflow-y-auto ${mobileNavOpen
-            ? 'max-h-[calc(100vh-4rem)] opacity-100 translate-y-0'
-            : 'max-h-0 opacity-0 -translate-y-2 pointer-events-none'
+          ? 'max-h-[calc(100vh-4rem)] opacity-100 translate-y-0'
+          : 'max-h-0 opacity-0 -translate-y-2 pointer-events-none'
           }`}
       >
         <div className="px-5 py-4 space-y-1">
@@ -299,6 +309,18 @@ export function Header() {
                   className="flex items-center gap-3 px-3 py-3 rounded-xl text-foreground/80 hover:bg-muted hover:text-foreground font-medium transition"
                 >
                   Organizer Dashboard
+                </Link>
+              )}
+
+              {/* Ticket Check-in (organizers) */}
+              {user?.role === 'organizer' && (
+                <Link
+                  href="/organizer/checkin"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-foreground/80 hover:bg-muted hover:text-foreground font-medium transition"
+                >
+                  <QrCode className="w-5 h-5" />
+                  Ticket Check-in
                 </Link>
               )}
 

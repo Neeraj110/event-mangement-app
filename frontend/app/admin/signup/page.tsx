@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { apiClient } from '@/lib/api/apiClient';
-import { User, RegisterResponse } from '@/types';
+import { User, LoginResponse } from '@/types';
 import {
     Mail, Lock, Eye, EyeOff, Loader2, Shield,
     AlertTriangle, User as UserIcon, CheckCircle2, XCircle
@@ -69,7 +69,7 @@ export default function AdminSignupPage() {
         setServerError('');
         setIsLoading(true);
         try {
-            const result = await apiClient<RegisterResponse>('/admin/register', {
+            const result = await apiClient<LoginResponse>('/admin/register', {
                 method: 'POST',
                 body: JSON.stringify({
                     name: data.name,

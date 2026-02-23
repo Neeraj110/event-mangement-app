@@ -1,10 +1,11 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, Users, Ticket, DollarSign } from 'lucide-react';
+import { TrendingUp, Users, Ticket, DollarSign, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { useDashboardStore } from '@/lib/stores/dashboardStore';
+import Link from 'next/link';
 
 export default function OrganizerDashboard() {
   const dashboard = useDashboardStore();
@@ -24,6 +25,17 @@ export default function OrganizerDashboard() {
 
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold">Overview</h2>
+          <Link href="/organizer/checkin">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+              <QrCode className="w-4 h-4" />
+              Scan Tickets
+            </Button>
+          </Link>
+        </div>
+
         {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total Revenue */}

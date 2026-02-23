@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
@@ -7,6 +8,8 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
 import connectDB from "./config/db";
+import { connectRedis, disconnectRedis } from "./config/redis";
+import { initSocket } from "./config/socket";
 import userRoutes from "./routes/user.route";
 import eventRoutes from "./routes/event.route";
 import passport from "./config/passport";
@@ -16,14 +19,22 @@ import subscriptionRoutes from "./routes/subscription.route";
 import adminRoutes from "./routes/admin.route";
 import paymentRoutes from "./routes/payment.route";
 import checkInRoutes from "./routes/checkin.route";
+import { startEventArchiveCron } from "./utils/cron";
 
 dotenv.config();
 
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
+
+// ─── Initialize Redis ─────────────────────────────────────
+connectRedis();
+
+// ─── Initialize Socket.io ─────────────────────────────────
+initSocket(server);
 
 // ─── Global Rate Limiter ──────────────────────────────────
 const globalLimiter = rateLimit({
@@ -98,6 +109,22 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// ─── Start Server ─────────────────────────────────────────
+server.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🔌 Socket.io ready for connections`);
+  startEventArchiveCron();
 });
+
+// ─── Graceful Shutdown ────────────────────────────────────
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  server.close(() => {
+    console.log("📡 HTTP server closed");
+  });
+  await disconnectRedis();
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
