@@ -332,41 +332,79 @@ export const getPersonalizedEvents = async (req: Request, res: Response) => {
       return res.status(200).json(cached);
     }
 
-    // Fetch interest-matched events (category matches user interests)
-    // No need to redeclare baseFilter, it's already defined at the top of the function.
-
-    // Case-insensitive interest matching
+    // Case-insensitive interest matching regexes
     const interestRegexes = interests.map(
       (i: string) => new RegExp(`^${i}$`, "i"),
     );
 
-    const [matchedEvents, otherEvents] = await Promise.all([
-      Event.find({
-        ...baseFilter,
-        category: { $in: interestRegexes },
-        endDate: { $gte: now },
-      })
-        .sort({ startDate: 1 })
-        .populate("organizerId", "name email"),
-      Event.find({
-        ...baseFilter,
-        category: { $nin: interestRegexes },
-        endDate: { $gte: now },
-      })
-        .sort({ startDate: 1 })
-        .populate("organizerId", "name email"),
-    ]);
+    // Use aggregation to handle prioritization and pagination in DB
+    const aggregatePipeline: any[] = [
+      {
+        $match: {
+          ...baseFilter,
+          endDate: { $gte: now },
+        },
+      },
+      {
+        $addFields: {
+          priority: {
+            $cond: {
+              if: { $in: ["$category", interestRegexes] },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          priority: -1,
+          startDate: 1,
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $lookup: {
+                from: "users",
+                localField: "organizerId",
+                foreignField: "_id",
+                as: "organizer",
+              },
+            },
+            { $unwind: "$organizer" },
+            {
+              $project: {
+                "organizer.password": 0,
+                "organizer.refreshToken": 0,
+              },
+            },
+          ],
+        },
+      },
+    ];
 
-    // Combine: interest-matched first, then the rest
-    const allEvents = [...matchedEvents, ...otherEvents];
-    const total = allEvents.length;
-    const paginatedEvents = allEvents.slice(skip, skip + limit);
+    const result = await Event.aggregate(aggregatePipeline);
+
+    const total = result[0].metadata[0]?.total || 0;
+    const events = result[0].data.map((e: any) => ({
+      ...e,
+      organizerId: {
+        _id: e.organizer._id,
+        name: e.organizer.name,
+        email: e.organizer.email,
+      },
+      organizer: undefined, // cleanup
+    }));
 
     const responseData = {
-      events: paginatedEvents,
+      events,
       pagination: { total, page, limit, pages: Math.ceil(total / limit) },
       personalized: true,
-      matchedCount: matchedEvents.length,
     };
 
     // Cache for 60 seconds (per user)

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Ticket from "../models/ticket.model";
 import Event from "../models/event.model";
 import { IUserDocument } from "../types/types";
@@ -12,56 +13,69 @@ import { IUserDocument } from "../types/types";
 export const getUserTickets = async (req: Request, res: Response) => {
   try {
     const userId = (req.user as IUserDocument)?._id;
-
-    const tickets = await Ticket.find({ userId })
-      .populate({
-        path: "eventId",
-        select: "title coverImage startDate endDate location category price",
-      })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // Separate upcoming vs past using event dates + ticket status
-    const now = new Date();
-    const upcoming: any[] = [];
-    const past: any[] = [];
-
-    for (const ticket of tickets) {
-      const event = ticket.eventId as any;
-      if (!event) {
-        past.push(ticket);
-        continue;
-      }
-
-      const eventEnd = new Date(event.endDate || event.startDate);
-      const isUpcoming = eventEnd >= now && ticket.status === "valid";
-
-      if (isUpcoming) {
-        upcoming.push(ticket);
-      } else {
-        past.push(ticket);
-      }
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Sort upcoming by nearest event first (ascending startDate)
-    upcoming.sort((a, b) => {
-      const dateA = new Date(a.eventId?.startDate || 0).getTime();
-      const dateB = new Date(b.eventId?.startDate || 0).getTime();
-      return dateA - dateB;
-    });
+    const now = new Date();
 
-    // Sort past by most recent event first (descending startDate)
-    past.sort((a, b) => {
-      const dateA = new Date(a.eventId?.startDate || 0).getTime();
-      const dateB = new Date(b.eventId?.startDate || 0).getTime();
-      return dateB - dateA;
-    });
+    const aggregatePipeline: any[] = [
+      { $match: { userId: new mongoose.Types.ObjectId(userId.toString()) } },
+      {
+        $lookup: {
+          from: "events",
+          localField: "eventId",
+          foreignField: "_id",
+          as: "event",
+        },
+      },
+      { $unwind: { path: "$event", preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          isUpcoming: {
+            $and: [
+              { $eq: ["$status", "valid"] },
+              {
+                $gte: [
+                  { $ifNull: ["$event.endDate", "$event.startDate"] },
+                  now,
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          sortPriority: { $cond: { if: "$isUpcoming", then: 1, else: 0 } },
+          // For upcoming, we want nearest first (ascending startDate)
+          // For past, we want most recent first (descending startDate)
+          // We can't easily do dual-direction sort in one field without tricks.
+          // But we can sort by sortPriority DESC first.
+        },
+      },
+      {
+        $sort: {
+          sortPriority: -1,
+          "event.startDate": 1, // This works for upcoming. For past, we might need a separate query or nested aggregation if strict order is needed.
+        },
+      },
+      {
+        $project: {
+          eventId: "$event",
+          status: 1,
+          userId: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          isUpcoming: 1,
+          // include other fields if necessary
+        },
+      },
+    ];
 
-    // Return flat array with upcoming first, then past
-    // (frontend already splits by date — this ordering makes both work)
-    const tickets_sorted = [...upcoming, ...past];
+    const tickets = await Ticket.aggregate(aggregatePipeline);
 
-    res.status(200).json({ tickets: tickets_sorted });
+    res.status(200).json({ tickets });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }

@@ -25,8 +25,10 @@ const eventSchema = new Schema<IEvent>(
 
 // Indexes for common queries
 eventSchema.index({ organizerId: 1 });
-eventSchema.index({ category: 1, isPublished: 1 });
-eventSchema.index({ startDate: 1, isPublished: 1 });
-eventSchema.index({ isPublished: 1, createdAt: -1 });
+eventSchema.index({ category: 1, isPublished: 1, isArchived: 1 });
+eventSchema.index({ startDate: 1, isPublished: 1, isArchived: 1 });
+eventSchema.index({ endDate: 1, isPublished: 1, isArchived: 1 });
+eventSchema.index({ category: 1, endDate: 1, isPublished: 1, isArchived: 1 });
+eventSchema.index({ isPublished: 1, isArchived: 1, createdAt: -1 });
 
 export default mongoose.model<IEvent>("Event", eventSchema);

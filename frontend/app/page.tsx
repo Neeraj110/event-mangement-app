@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, MapPin, ChevronRight } from 'lucide-react';
@@ -8,12 +8,84 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { CategoryCard } from '@/components/category-card';
 import { EventCard } from '@/components/event-card';
+import { EventCardSkeleton } from '@/components/event-card-skeleton';
 import { usePersonalizedEvents } from '@/lib/hooks/useEventQueries';
 import { useAuthStore } from '@/lib/stores/authStore';
-import { User } from '@/types';
-import Loading from './loading';
+import { User, Event } from '@/types';
 import heroImages from "@/public/heroImage1.jpg";
 import { useSearchParams, useRouter } from 'next/navigation';
+
+function EventList() {
+  const { data: personalizedData, error } = usePersonalizedEvents();
+  const eventsData = personalizedData?.events;
+  const isPersonalized = personalizedData?.personalized || false;
+
+  if (error) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-red-500">Failed to load events. Please try again later.</p>
+      </div>
+    );
+  }
+
+  const trendingEvents = (eventsData || []).slice(0, 6).map((event: Event) => ({
+    _id: event._id,
+    title: event.title,
+    date: new Date(event.startDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    location: event.location.city,
+    image: event.coverImage,
+    price: event.price,
+    category: event.category,
+  }));
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold">{isPersonalized ? 'Recommended For You' : 'Trending Near You'}</h2>
+          <div className="flex items-center gap-1 text-sm text-foreground/60 mt-1">
+            <span>●</span>
+            <span>{isPersonalized ? 'Based on your interests' : 'Popular in New York'}</span>
+          </div>
+        </div>
+        <Link href="/events" className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+          View all events <ChevronRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {trendingEvents.map((event) => (
+          <EventCard
+            key={event._id}
+            {...event}
+          />
+        ))}
+        {trendingEvents.length === 0 && (
+          <div className="col-span-full text-center py-20 text-muted-foreground">
+            No events found at the moment.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function EventListSkeleton() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="h-8 w-64 bg-muted rounded mb-8 animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <EventCardSkeleton key={i} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -46,25 +118,9 @@ export default function Home() {
       })();
     }
   }, [searchParams, router, setCredentials]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('New York, NY');
-  const [category, setCategory] = useState('All Categories');
-
-  const { data: personalizedData, isLoading, error } = usePersonalizedEvents();
-  const eventsData = personalizedData?.events;
-  const isPersonalized = personalizedData?.personalized || false;
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-red-500">Failed to load events. Please try again later.</p>
-      </div>
-    );
-  }
 
   const categories = [
     { icon: '♪', label: 'Music', href: '/events?category=Music', color: 'bg-blue-100' },
@@ -74,20 +130,6 @@ export default function Home() {
     { icon: '💪', label: 'Health', href: '/events?category=Health', color: 'bg-green-100' },
     { icon: '💼', label: 'Business', href: '/events?category=Business', color: 'bg-cyan-100' },
   ];
-
-  const trendingEvents = (eventsData || []).slice(0, 6).map((event) => ({
-    _id: event._id,
-    title: event.title,
-    date: new Date(event.startDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }),
-    location: event.location.city,
-    image: event.coverImage,
-    price: event.price,
-    category: event.category,
-  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,9 +141,7 @@ export default function Home() {
           <div className="relative overflow-hidden min-h-[420px] md:min-h-[550px] bg-slate-900 rounded-2xl md:rounded-[2.5rem] shadow-2xl ring-1 ring-white/10 group">
             {/* Background Images Carousel */}
             <div className="absolute inset-0 z-0">
-              <div
-                className={`absolute inset-0 duration-1000 ease-in-out`}
-              >
+              <div className="absolute inset-0 duration-1000 ease-in-out">
                 <Image
                   src={heroImages}
                   alt="Event background"
@@ -185,36 +225,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trending Near You */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-bold">{isPersonalized ? 'Recommended For You' : 'Trending Near You'}</h2>
-            <div className="flex items-center gap-1 text-sm text-foreground/60 mt-1">
-              <span>●</span>
-              <span>{isPersonalized ? 'Based on your interests' : 'Popular in New York'}</span>
-            </div>
-          </div>
-          <Link href="/events" className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-            View all events <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trendingEvents.map((event) => (
-            <EventCard
-              key={event._id}
-              _id={event._id}
-              title={event.title}
-              date={event.date}
-              location={event.location}
-              image={event.image}
-              price={event.price}
-              category={event.category}
-            />
-          ))}
-        </div>
-      </section>
+      {/* Trending / Personalized Events (Suspended) */}
+      <Suspense fallback={<EventListSkeleton />}>
+        <EventList />
+      </Suspense>
 
       {/* CTA Section */}
       <section className="py-16 px-3 sm:px-6 lg:px-8">
@@ -295,20 +309,6 @@ export default function Home() {
           </div>
           <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-foreground/60">© 2024 Spot Inc. All rights reserved.</p>
-            <div className="flex gap-4 mt-4 md:mt-0">
-              <a href="#" className="text-foreground/60 hover:text-foreground">
-                <span className="sr-only">Twitter</span>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-7.029 3.746 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
-              </a>
-              <a href="#" className="text-foreground/60 hover:text-foreground">
-                <span className="sr-only">Facebook</span>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18.896 12.6c0-4.889-3.759-8.846-8.39-8.846-4.632 0-8.39 3.957-8.39 8.846 0 4.412 3.191 8.09 7.375 8.728v-6.165h-2.522V12.6h2.522v-1.937c0-2.487 1.484-3.86 3.743-3.86 1.083 0 2.213.193 2.213.193v2.437h-1.247c-1.229 0-1.562.762-1.562 1.542v1.85h2.670l-.427 2.769h-2.243v6.165c4.185-.638 7.375-4.316 7.375-8.728z" clipRule="evenodd" />
-                </svg>
-              </a>
-            </div>
           </div>
         </div>
       </footer>
