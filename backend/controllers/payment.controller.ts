@@ -9,8 +9,8 @@ import Ticket from "../models/ticket.model";
 import { v4 as uuidv4 } from "uuid";
 import { cacheDelete, cacheDeletePattern } from "../utils/cache";
 import { getIO } from "../config/socket";
+import { getRedis } from "../config/redis";
 
-// Lazy initialization — avoids crash at module load if env vars are missing
 let _razorpay: InstanceType<typeof Razorpay> | null = null;
 function getRazorpay() {
   if (!_razorpay) {
@@ -25,9 +25,6 @@ function getRazorpay() {
   return _razorpay;
 }
 
-/**
- * Create a Razorpay order for ticket purchase
- */
 export const createOrder = async (req: Request, res: Response) => {
   const { eventId, quantity } = req.body;
   const userId = (req.user as IUserDocument)?._id;
@@ -95,9 +92,6 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Verify Razorpay payment signature, atomically decrement capacity, and create tickets
- */
 export const verifyPayment = async (req: Request, res: Response) => {
   const {
     razorpay_order_id,
@@ -178,91 +172,108 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Payment amount mismatch" });
     }
 
-    // ─── 4. Atomic Capacity Decrement ─────────────────────
-    // Use findOneAndUpdate with $inc to atomically check and decrement
-    const soldTickets = await Ticket.countDocuments({
-      eventId,
-      status: { $ne: "cancelled" },
-    });
+    const redis = getRedis();
+    const lockKey = `lock:event:${eventId}`;
+    let acquired = false;
 
-    if (soldTickets + qty > event.capacity) {
-      return res.status(400).json({
-        message: "Event is sold out. Please contact support for a refund.",
+    for (let i = 0; i < 50; i++) {
+      const res = await redis.set(lockKey, "locked", "PX", 10000, "NX");
+      if (res === "OK") {
+        acquired = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    if (!acquired) {
+      return res.status(429).json({
+        message:
+          "Server is busy processing transactions for this event. Please try again.",
       });
     }
 
-    // ─── 5. Create Transaction + Tickets ───────────────────
-    const amount = event.price * qty;
-    const platformFee = amount * 0.05; // 5% platform fee
-    const organizerShare = amount - platformFee;
-
-    const transaction = new PaymentTransaction({
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id,
-      userId,
-      eventId,
-      organizerId: event.organizerId,
-      amount,
-      platformFee,
-      organizerShare,
-      status: "success",
-    });
-    await transaction.save();
-
-    // Create Tickets
-    const tickets = [];
-    for (let i = 0; i < qty; i++) {
-      const ticketCode = `TICKET-${uuidv4().substring(0, 8).toUpperCase()}`;
-      tickets.push({
+    try {
+      const soldTickets = await Ticket.countDocuments({
         eventId,
+        status: { $ne: "cancelled" },
+      });
+
+      if (soldTickets + qty > event.capacity) {
+        return res.status(400).json({
+          message: "Event is sold out. Please contact support for a refund.",
+        });
+      }
+
+      const amount = event.price * qty;
+      const platformFee = amount * 0.05;
+      const organizerShare = amount - platformFee;
+
+      const transaction = new PaymentTransaction({
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
         userId,
-        ticketCode,
-        qrPayload: JSON.stringify({
-          ticketCode,
+        eventId,
+        organizerId: event.organizerId,
+        amount,
+        platformFee,
+        organizerShare,
+        status: "success",
+      });
+      await transaction.save();
+
+      const tickets = [];
+      for (let i = 0; i < qty; i++) {
+        const ticketCode = `TICKET-${uuidv4().substring(0, 8).toUpperCase()}`;
+        tickets.push({
           eventId,
           userId,
-          transactionId: transaction._id,
-          timestamp: Date.now(),
-        }),
-        status: "valid",
-      });
-    }
-    await Ticket.insertMany(tickets);
-
-    console.log(
-      `✅ Created ${qty} tickets for user ${userId}, event ${eventId}`,
-    );
-
-    // ─── 6. Invalidate caches ──────────────────────────────
-    await cacheDelete(`event:${eventId}`);
-    await cacheDeletePattern("events:list:*");
-    await cacheDelete(`organizer:stats:${eventId}`);
-    await cacheDelete(`checkin:stats:${eventId}`);
-
-    // ─── 7. Emit real-time ticket update via Socket.io ─────
-    try {
-      const totalSoldNow = soldTickets + qty;
-      const remainingTickets = event.capacity - totalSoldNow;
-
-      getIO()
-        .to(`event:${eventId}`)
-        .emit("tickets:update", {
-          eventId,
-          totalSold: totalSoldNow,
-          remainingTickets,
-          capacity: event.capacity,
-          soldOut: remainingTickets <= 0,
+          ticketCode,
+          qrPayload: JSON.stringify({
+            ticketCode,
+            eventId,
+            userId,
+            transactionId: transaction._id,
+            timestamp: Date.now(),
+          }),
+          status: "valid",
         });
-    } catch (socketErr) {
-      // Don't fail the payment if socket emission fails
-      console.error("Socket emission error:", socketErr);
-    }
+      }
+      await Ticket.insertMany(tickets);
 
-    res.status(200).json({
-      message: "Payment verified and tickets created",
-      transactionId: transaction._id,
-      ticketCount: qty,
-    });
+      console.log(
+        `✅ Created ${qty} tickets for user ${userId}, event ${eventId}`,
+      );
+
+      await cacheDelete(`event:${eventId}`);
+      await cacheDeletePattern("events:list:*");
+      await cacheDelete(`organizer:stats:${eventId}`);
+      await cacheDelete(`checkin:stats:${eventId}`);
+
+      try {
+        const totalSoldNow = soldTickets + qty;
+        const remainingTickets = event.capacity - totalSoldNow;
+
+        getIO()
+          .to(`event:${eventId}`)
+          .emit("tickets:update", {
+            eventId,
+            totalSold: totalSoldNow,
+            remainingTickets,
+            capacity: event.capacity,
+            soldOut: remainingTickets <= 0,
+          });
+      } catch (socketErr) {
+        console.error("Socket emission error:", socketErr);
+      }
+
+      res.status(200).json({
+        message: "Payment verified and tickets created",
+        transactionId: transaction._id,
+        ticketCount: qty,
+      });
+    } finally {
+      await redis.del(lockKey);
+    }
   } catch (error: any) {
     console.error("Payment verification error:", error);
     res.status(500).json({

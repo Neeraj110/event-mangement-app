@@ -39,23 +39,22 @@ passport.use(
         const requestedRole =
           req.query?.state === "organizer" ? "organizer" : "user";
 
-        let user = await User.findOne({ googleId: profile.id });
+        let user = await User.findOne({ email: profile.emails?.[0].value });
 
         if (!user) {
-          user = await User.findOne({ email: profile.emails?.[0].value });
-
-          if (user) {
-            user.googleId = profile.id;
-            await user.save();
-          } else {
-            user = await User.create({
-              name: profile.displayName,
-              email: profile.emails?.[0].value,
-              googleId: profile.id,
-              profileImage: profile.photos?.[0].value,
-              role: requestedRole,
-            });
+          user = await User.create({
+            name: profile.displayName,
+            email: profile.emails?.[0].value,
+            googleId: profile.id,
+            profileImage: profile.photos?.[0].value,
+            role: requestedRole,
+          });
+        } else {
+          user.googleId = profile.id;
+          if (requestedRole === "organizer") {
+            user.role = "organizer";
           }
+          await user.save();
         }
 
         return done(null, user);
@@ -86,29 +85,22 @@ passport.use(
         const requestedRole =
           req.query?.state === "organizer" ? "organizer" : "user";
 
-        let user = await User.findOne({ githubId: profile.id });
+        let user = await User.findOne({ email: profile.emails?.[0]?.value });
 
         if (!user) {
-          const email = profile.emails?.[0]?.value;
-
-          if (!email) {
-            return done(new Error("No email found from GitHub"), false);
+          user = await User.create({
+            name: profile.displayName || profile.username,
+            email: profile.emails?.[0]?.value,
+            githubId: profile.id,
+            profileImage: profile.photos?.[0]?.value,
+            role: requestedRole,
+          });
+        } else {
+          user.githubId = profile.id;
+          if (requestedRole === "organizer") {
+            user.role = "organizer";
           }
-
-          user = await User.findOne({ email });
-
-          if (user) {
-            user.githubId = profile.id;
-            await user.save();
-          } else {
-            user = await User.create({
-              name: profile.displayName || profile.username,
-              email: email,
-              githubId: profile.id,
-              profileImage: profile.photos?.[0]?.value,
-              role: requestedRole,
-            });
-          }
+          await user.save();
         }
 
         return done(null, user);

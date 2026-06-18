@@ -3,7 +3,6 @@ import { IUserDocument } from "../types/types";
 import { createEventSchema, updateEventSchema } from "../schemas/event.schema";
 import Event from "../models/event.model";
 import Ticket from "../models/ticket.model";
-import User from "../models/user.model";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary";
 import {
   cacheGet,
@@ -161,11 +160,10 @@ export const updateEvent = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Authorization: Check ownership (Allow admin to bypass)
+    const currentUser = req.user as IUserDocument;
     if (
-      event.organizerId.toString() !==
-        (req.user as IUserDocument)?._id.toString() &&
-      (req.user as IUserDocument)?.role === "organizer"
+      currentUser.role !== "admin" &&
+      event.organizerId.toString() !== currentUser._id.toString()
     ) {
       return res
         .status(403)
@@ -232,10 +230,10 @@ export const deleteEvent = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
+    const currentUser = req.user as IUserDocument;
     if (
-      event.organizerId.toString() !==
-        (req.user as IUserDocument)?._id.toString() &&
-      (req.user as IUserDocument)?.role === "organizer"
+      currentUser.role !== "admin" &&
+      event.organizerId.toString() !== currentUser._id.toString()
     ) {
       return res
         .status(403)
@@ -332,12 +330,8 @@ export const getPersonalizedEvents = async (req: Request, res: Response) => {
       return res.status(200).json(cached);
     }
 
-    // Case-insensitive interest matching regexes
-    const interestRegexes = interests.map(
-      (i: string) => new RegExp(`^${i}$`, "i"),
-    );
+    const lowerInterests = interests.map((i: string) => i.toLowerCase());
 
-    // Use aggregation to handle prioritization and pagination in DB
     const aggregatePipeline: any[] = [
       {
         $match: {
@@ -349,7 +343,7 @@ export const getPersonalizedEvents = async (req: Request, res: Response) => {
         $addFields: {
           priority: {
             $cond: {
-              if: { $in: ["$category", interestRegexes] },
+              if: { $in: [{ $toLower: "$category" }, lowerInterests] },
               then: 1,
               else: 0,
             },

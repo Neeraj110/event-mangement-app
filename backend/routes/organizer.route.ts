@@ -7,14 +7,8 @@ import { authMiddleware, authorizeRoles } from "../middlewares/auth.middleware";
 
 const router = express.Router();
 
-// Apply auth and role check
 router.use(authMiddleware);
-
-// Restrict to organizers
-// Assuming authorizeRoles middleware exists. If not, I will add check inside controller or add middleware.
-// For now, let's assume I need to implement basic role checking if middleware is missing.
-// Checking routes/admin.route.ts might clarify, but it doesn't exist yet.
-// I will check auth.middleware.ts in next step to be sure.
+router.use(authorizeRoles("organizer", "admin"));
 
 router.get("/events", getOrganizerEvents);
 router.get("/events/:id/stats", getEventStats);

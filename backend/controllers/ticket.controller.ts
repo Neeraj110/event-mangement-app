@@ -1,15 +1,8 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Ticket from "../models/ticket.model";
-import Event from "../models/event.model";
 import { IUserDocument } from "../types/types";
 
-/**
- * GET /api/tickets/me
- * Returns all tickets for the authenticated user, split into:
- *  - upcoming: valid tickets whose event hasn't ended yet (sorted nearest-first)
- *  - past: used/cancelled tickets or tickets whose event has ended (sorted most-recent-first)
- */
 export const getUserTickets = async (req: Request, res: Response) => {
   try {
     const userId = (req.user as IUserDocument)?._id;

@@ -5,7 +5,7 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import cookieparser from "cookie-parser";
 import morgan from "morgan";
-import rateLimit from "express-rate-limit";
+import { rateLimiter } from "./utils/rateLimits";
 import mongoSanitize from "express-mongo-sanitize";
 import connectDB from "./config/db";
 import { connectRedis, disconnectRedis } from "./config/redis";
@@ -19,7 +19,7 @@ import subscriptionRoutes from "./routes/subscription.route";
 import adminRoutes from "./routes/admin.route";
 import paymentRoutes from "./routes/payment.route";
 import checkInRoutes from "./routes/checkin.route";
-import { startEventArchiveCron } from "./utils/cron";
+import { startEventArchiveCron, startSubscriptionExpiryCron } from "./utils/cron";
 
 dotenv.config();
 
@@ -30,49 +30,34 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
 
-// ─── Initialize Redis ─────────────────────────────────────
 connectRedis();
 
-// ─── Initialize Socket.io ─────────────────────────────────
 initSocket(server);
 
-// ─── Global Rate Limiter ──────────────────────────────────
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // limit each IP to 200 requests per windowMs
-  message: { message: "Too many requests, please try again later." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const globalLimiter = rateLimiter(
+  200,
+  15 * 60 * 1000,
+  "Too many requests, please try again later.",
+);
 
-// ─── Strict Rate Limiter for Payment Routes ───────────────
-export const paymentLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // max 10 payment requests per minute per IP
-  message: { message: "Too many payment requests, please slow down." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+export const paymentLimiter = rateLimiter(
+  10,
+  1 * 60 * 1000,
+  "Too many payment requests, please slow down.",
+);
 
-// ─── Auth Rate Limiter ────────────────────────────────────
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // max 20 auth requests per 15 mins per IP
-  message: { message: "Too many login attempts, please try again later." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+export const authLimiter = rateLimiter(
+  20,
+  15 * 60 * 1000,
+  "Too many login attempts, please try again later.",
+);
 
-// ─── Middleware ───────────────────────────────────────────
 app.use(passport.initialize());
 app.use(helmet());
 app.use(globalLimiter);
 app.use(
   cors({
-    origin: [
-      process.env.CORS_ORIGIN || "http://localhost:3000",
-      process.env.FRONTEND_URL || "",
-    ],
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
   }),
@@ -83,8 +68,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieparser());
 app.use(morgan("dev"));
 
-// NoSQL injection prevention — sanitize req.body and req.params
-// Note: req.query is read-only in newer Express, so we sanitize manually
 app.use((req, _res, next) => {
   if (req.body) {
     mongoSanitize.sanitize(req.body);
@@ -95,7 +78,6 @@ app.use((req, _res, next) => {
   next();
 });
 
-// ─── Routes ──────────────────────────────────────────────
 app.use("/api/users", authLimiter, userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/tickets", ticketRoutes);
@@ -109,14 +91,13 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// ─── Start Server ─────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`🔌 Socket.io ready for connections`);
   startEventArchiveCron();
+  startSubscriptionExpiryCron();
 });
 
-// ─── Graceful Shutdown ────────────────────────────────────
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n${signal} received. Shutting down gracefully...`);
   server.close(() => {
