@@ -307,7 +307,9 @@ export function EventForm({ event, mode }: EventFormProps) {
                     <FormField
                         control={form.control}
                         name="startDate"
-                        render={({ field }) => (
+                        render={({ field }) => {
+                            const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            return (
                             <FormItem>
                                 <FormLabel className="font-semibold">
                                     Start Date & Time
@@ -318,19 +320,25 @@ export function EventForm({ event, mode }: EventFormProps) {
                                         <Input
                                             type="datetime-local"
                                             className="pl-10"
+                                            min={minDateTime}
                                             {...field}
                                         />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}
+                        )}}
                     />
 
                     <FormField
                         control={form.control}
                         name="endDate"
-                        render={({ field }) => (
+                        render={({ field }) => {
+                            const startDateVal = form.watch("startDate");
+                            const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            const minEndDateTime = startDateVal && startDateVal > minDateTime ? startDateVal : minDateTime;
+                            
+                            return (
                             <FormItem>
                                 <FormLabel className="font-semibold">
                                     End Date & Time
@@ -341,13 +349,14 @@ export function EventForm({ event, mode }: EventFormProps) {
                                         <Input
                                             type="datetime-local"
                                             className="pl-10"
+                                            min={minEndDateTime}
                                             {...field}
                                         />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}
+                        )}}
                     />
                 </div>
 
