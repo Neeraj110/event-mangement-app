@@ -80,9 +80,11 @@ export const getAllEvents = async (req: Request, res: Response) => {
       return res.status(200).json(cached);
     }
 
+    const now = new Date();
     const events = await Event.find({
       isPublished: true,
       isArchived: { $ne: true },
+      endDate: { $gte: now },
     })
       .sort({ startDate: -1 }) // Sort by startDate DESC
       .skip(skip)
@@ -92,6 +94,7 @@ export const getAllEvents = async (req: Request, res: Response) => {
     const total = await Event.countDocuments({
       isPublished: true,
       isArchived: { $ne: true },
+      endDate: { $gte: now },
     });
 
     const responseData = {
@@ -280,6 +283,7 @@ export const getPersonalizedEvents = async (req: Request, res: Response) => {
     const baseFilter = {
       isPublished: true,
       isArchived: { $ne: true },
+      endDate: { $gte: now },
     };
 
     const page = parseInt(req.query.page as string) || 1;
@@ -299,19 +303,13 @@ export const getPersonalizedEvents = async (req: Request, res: Response) => {
         return res.status(200).json(cached);
       }
 
-      const events = await Event.find({
-        ...baseFilter,
-        endDate: { $gte: now },
-      })
+      const events = await Event.find(baseFilter)
         .sort({ startDate: 1 })
         .skip(skip)
         .limit(limit)
         .populate("organizerId", "name email");
 
-      const total = await Event.countDocuments({
-        isPublished: true,
-        isArchived: { $ne: true },
-      });
+      const total = await Event.countDocuments(baseFilter);
 
       const responseData = {
         events,
@@ -334,10 +332,7 @@ export const getPersonalizedEvents = async (req: Request, res: Response) => {
 
     const aggregatePipeline: any[] = [
       {
-        $match: {
-          ...baseFilter,
-          endDate: { $gte: now },
-        },
+        $match: baseFilter,
       },
       {
         $addFields: {
