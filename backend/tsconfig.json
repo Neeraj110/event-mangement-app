@@ -4,6 +4,7 @@
     "lib": ["ES2021"],
     "module": "CommonJS",
     "moduleResolution": "Node",
+    "ignoreDeprecations": "5.0",
 
     "rootDir": ".",
     "outDir": "./dist",
