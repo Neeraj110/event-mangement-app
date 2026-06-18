@@ -50,6 +50,9 @@ export const createOrder = async (req: Request, res: Response) => {
     if (!event.isPublished) {
       return res.status(400).json({ message: "Event is not available" });
     }
+    if (event.endDate < new Date()) {
+      return res.status(400).json({ message: "Cannot buy tickets for past events" });
+    }
 
     // Check capacity before creating order
     const soldTickets = await Ticket.countDocuments({

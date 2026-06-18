@@ -16,7 +16,28 @@ export const createEventSchema = z.object({
     price: z.coerce.number({ message: "Price is required" }).min(0),
     capacity: z.coerce.number({ message: "Capacity is required" }).min(1),
     isPublished: z.coerce.boolean().optional(),
-  }),
+  })
+  .refine(
+    (data) => {
+      // Start date must not be in the past (allow today)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return data.startDate >= today;
+    },
+    {
+      message: "Start date cannot be in the past",
+      path: ["startDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      return data.endDate >= data.startDate;
+    },
+    {
+      message: "End date must be after or equal to start date",
+      path: ["endDate"],
+    }
+  ),
 });
 
 export const updateEventSchema = z.object({

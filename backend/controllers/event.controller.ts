@@ -123,6 +123,9 @@ export const getEventById = async (req: Request, res: Response) => {
     const cacheKey = `event:${id}`;
     const cached = await cacheGet<{ event: any }>(cacheKey);
     if (cached) {
+      if (new Date(cached.event.endDate) < new Date()) {
+        return res.status(404).json({ message: "Event has already ended" });
+      }
       return res.status(200).json(cached);
     }
 
@@ -133,6 +136,11 @@ export const getEventById = async (req: Request, res: Response) => {
 
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
+    }
+    
+    // Hide past events
+    if (event.endDate < new Date()) {
+      return res.status(404).json({ message: "Event has already ended" });
     }
 
     const responseData = { event };
